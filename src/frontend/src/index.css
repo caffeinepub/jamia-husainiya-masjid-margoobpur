@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Islamic Green Palette */
+    --mosque-primary: 0.42 0.12 152;
+    --mosque-deep: 0.3 0.09 152;
+    --mosque-light: 0.96 0.03 152;
+    --mosque-gold: 0.72 0.1 80;
+    --mosque-gold-dark: 0.58 0.1 80;
+
+    /* Semantic tokens */
+    --background: 0.97 0.015 152;
+    --foreground: 0.18 0.05 152;
+    --card: 1 0 0;
+    --card-foreground: 0.18 0.05 152;
+    --popover: 1 0 0;
+    --popover-foreground: 0.18 0.05 152;
+    --primary: 0.42 0.12 152;
+    --primary-foreground: 0.985 0 0;
+    --secondary: 0.96 0.03 152;
+    --secondary-foreground: 0.42 0.12 152;
+    --muted: 0.95 0.02 152;
+    --muted-foreground: 0.5 0.05 152;
+    --accent: 0.72 0.1 80;
+    --accent-foreground: 0.18 0.05 152;
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+    --border: 0.9 0.03 152;
+    --input: 0.9 0.03 152;
+    --ring: 0.42 0.12 152;
+    --chart-1: 0.42 0.12 152;
+    --chart-2: 0.72 0.1 80;
+    --chart-3: 0.3 0.09 152;
+    --chart-4: 0.6 0.08 152;
+    --chart-5: 0.85 0.06 80;
+    --sidebar: 0.3 0.09 152;
+    --sidebar-foreground: 0.985 0 0;
+    --sidebar-primary: 0.72 0.1 80;
+    --sidebar-primary-foreground: 0.18 0.05 152;
+    --sidebar-accent: 0.42 0.12 152;
+    --sidebar-accent-foreground: 0.985 0 0;
+    --sidebar-border: 0.38 0.09 152;
+    --sidebar-ring: 0.72 0.1 80;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+}
