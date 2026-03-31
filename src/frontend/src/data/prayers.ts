@@ -6,6 +6,7 @@ export interface Prayer {
   icon: string;
   hour: number;
   minute: number;
+  isSpecial?: boolean;
 }
 
 export const PRAYERS: Prayer[] = [
@@ -17,6 +18,16 @@ export const PRAYERS: Prayer[] = [
     icon: "🌙",
     hour: 5,
     minute: 52,
+  },
+  {
+    id: "khutba_juma",
+    english: "Khutba Juma",
+    arabic: "خُطْبَةُ الجُمُعَة",
+    time: "1:30 PM",
+    icon: "🕌",
+    hour: 13,
+    minute: 30,
+    isSpecial: true,
   },
   {
     id: "zohar",
@@ -59,13 +70,8 @@ export const PRAYERS: Prayer[] = [
 export function getNextPrayer(): Prayer {
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
   for (const prayer of PRAYERS) {
-    const prayerMinutes = prayer.hour * 60 + prayer.minute;
-    if (prayerMinutes > currentMinutes) {
-      return prayer;
-    }
+    if (prayer.hour * 60 + prayer.minute > currentMinutes) return prayer;
   }
-  // After Isha — next is Fajr
   return PRAYERS[0];
 }

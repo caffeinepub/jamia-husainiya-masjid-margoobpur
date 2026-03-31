@@ -1,4 +1,7 @@
 export function MapScreen() {
+  const lat = 29.8629687;
+  const lng = 77.9740235;
+
   return (
     <div className="px-4 py-5" data-ocid="map.page">
       <div className="mb-5">
@@ -14,7 +17,7 @@ export function MapScreen() {
       <div className="bg-white rounded-2xl shadow-card overflow-hidden mb-4">
         <div className="relative" style={{ height: "340px" }}>
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3660!2d88.3!3d24.1!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjTCsDA2JzAwLjAiTiA4OMKwMTgnMDAuMCJF!5e0!3m2!1sen!2sin!4v1234567890"
+            src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d500!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjnCsDUxJzQ2LjciTiA3N8KwNTgnMjYuNSJF!5e0!3m2!1sen!2sin!4v1234567890`}
             width="100%"
             height="340"
             style={{ border: "0" }}
@@ -43,18 +46,16 @@ export function MapScreen() {
         </div>
       </div>
 
-      {/* Update note */}
-      <div
-        className="rounded-xl p-3 flex items-start gap-2"
-        style={{ background: "#fff8e1", border: "1px solid #f5e0a0" }}
+      {/* Directions button */}
+      <a
+        href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-semibold text-sm"
+        style={{ background: "#1a6b3c" }}
       >
-        <span className="text-base">ℹ️</span>
-        <p className="text-xs text-gray-600 leading-relaxed">
-          <strong>To update map location:</strong> Replace the coordinates in
-          the iframe src with your mosque's exact GPS coordinates
-          (latitude/longitude).
-        </p>
-      </div>
+        🗺️ Google Maps पर Directions लें
+      </a>
     </div>
   );
 }

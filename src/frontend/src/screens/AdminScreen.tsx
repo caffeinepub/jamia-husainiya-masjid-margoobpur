@@ -363,9 +363,15 @@ function PrayerTimesManager() {
 
   const prayerLabels: Record<
     string,
-    { arabic: string; english: string; icon: string }
+    { arabic: string; english: string; icon: string; isSpecial?: boolean }
   > = {
     fajr: { arabic: "الفَجْر", english: "Fajr", icon: "🌙" },
+    khutba_juma: {
+      arabic: "خُطْبَةُ الجُمُعَة",
+      english: "Khutba Juma",
+      icon: "🕌",
+      isSpecial: true,
+    },
     zohar: { arabic: "الظُّهْر", english: "Zohar", icon: "🌅" },
     asr: { arabic: "العَصْر", english: "Asr", icon: "☀️" },
     maghrib: { arabic: "المَغْرِب", english: "Maghrib", icon: "🌇" },
@@ -415,6 +421,14 @@ function PrayerTimesManager() {
                 <p className="font-bold text-sm" style={{ color: "#1a6b3c" }}>
                   {label.english}
                 </p>
+                {label.isSpecial && (
+                  <span
+                    className="inline-block text-xs px-2 py-0.5 rounded-full font-bold mt-0.5"
+                    style={{ background: "#c9a84c", color: "#3b2000" }}
+                  >
+                    Sirf Juma
+                  </span>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-400 mb-1">{to12h(val)}</p>
