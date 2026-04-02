@@ -40,16 +40,26 @@ function getEffectivePrayers(savedTimes: PrayerTimes | null): Prayer[] {
   });
 }
 
+// Get next prayer from a list, sorted by time (excluding special prayers on non-Friday)
 function getNextPrayerFromList(prayers: Prayer[]): Prayer {
   const now = new Date();
+  const isFriday = now.getDay() === 5;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  for (const prayer of prayers) {
+
+  // Filter out special prayers on non-Friday, then sort by time to find correct next
+  const activePrayers = prayers
+    .filter((p) => !p.isSpecial || isFriday)
+    .slice()
+    .sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
+
+  for (const prayer of activePrayers) {
     if (prayer.hour * 60 + prayer.minute > currentMinutes) return prayer;
   }
-  return prayers[0];
+  // Wrap around to first prayer of next day
+  return activePrayers[0] ?? prayers[0];
 }
 
-// Sort prayers: on Friday, Khutba Juma goes to top; otherwise it goes to bottom
+// Sort prayers for display: on Friday, Khutba Juma goes to top; otherwise it goes to bottom
 function sortPrayers(prayers: Prayer[], isFriday: boolean): Prayer[] {
   const special = prayers.filter((p) => p.isSpecial);
   const regular = prayers.filter((p) => !p.isSpecial);
@@ -105,10 +115,20 @@ export function NamazScreen() {
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Reload prayer times on focus AND on storage change (so Admin saves reflect immediately)
   useEffect(() => {
     const onFocus = () => setSavedTimes(loadPrayerTimes());
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PRAYER_TIMES_KEY) {
+        setSavedTimes(loadPrayerTimes());
+      }
+    };
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   // Check every 60 seconds (and immediately on mount) if a prayer time has arrived
@@ -193,6 +213,7 @@ export function NamazScreen() {
   }
 
   const prayers = getEffectivePrayers(savedTimes);
+  // Use corrected getNextPrayerFromList that sorts by time before finding next
   const nextPrayer = savedTimes
     ? getNextPrayerFromList(prayers)
     : getNextPrayer();
