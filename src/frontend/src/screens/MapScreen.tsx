@@ -6,10 +6,10 @@ export function MapScreen() {
     <div className="px-4 py-5" data-ocid="map.page">
       <div className="mb-5">
         <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
-          Find Us
+          हमें ढूंढें
         </h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Jamia Husainiya Masjid Margoobpur
+          जामिया हुसैनिया मस्जिद मरगूबपुर
         </p>
       </div>
 
@@ -24,7 +24,7 @@ export function MapScreen() {
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            title="Jamia Husainiya Masjid Margoobpur Location"
+            title="जामिया हुसैनिया मस्जिद मरगूबपुर की स्थिति"
           />
         </div>
       </div>
@@ -35,12 +35,12 @@ export function MapScreen() {
           <span className="text-xl mt-0.5">📍</span>
           <div>
             <p className="font-semibold text-sm" style={{ color: "#1a6b3c" }}>
-              Jamia Husainiya Masjid Margoobpur
+              जामिया हुसैनिया मस्जिद मरगूबपुर
             </p>
             <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-              Margoobpur Deedaheri,
+              मरगूबपुर दीदहेरी,
               <br />
-              Haridwar, Uttarakhand — 247667
+              हरिद्वार, उत्तराखंड — 247667
             </p>
           </div>
         </div>

@@ -35,10 +35,10 @@ export function NoticeScreen() {
     <div className="px-4 py-5" data-ocid="notice.page">
       <div className="mb-5">
         <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
-          Notices & Announcements
+          सूचनाएं और एलान
         </h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Stay updated with masjid activities
+          मस्जिद की गतिविधियों से अपडेट रहें
         </p>
       </div>
 
@@ -48,8 +48,8 @@ export function NoticeScreen() {
           data-ocid="notice.empty_state"
         >
           <div className="text-4xl mb-3">📋</div>
-          <p>कोई notice नहीं है।</p>
-          <p className="text-xs mt-1">Admin panel से notices जोड़ें।</p>
+          <p>कोई सूचना नहीं है।</p>
+          <p className="text-xs mt-1">Admin panel से सूचनाएं जोड़ें।</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -68,7 +68,7 @@ export function NoticeScreen() {
                     className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-bold"
                     style={{ background: "#fff0f0", color: "#c0392b" }}
                   >
-                    Important
+                    ज़रूरी
                   </span>
                 )}
               </div>

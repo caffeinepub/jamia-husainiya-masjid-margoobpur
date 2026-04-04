@@ -31,7 +31,7 @@ export function PeopleScreen() {
     <div className="px-4 py-5" data-ocid="people.page">
       <div className="mb-5">
         <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
-          Masjid Committee
+          मस्जिद कमेटी
         </h2>
         <p
           className="text-xs text-gray-500 mt-0.5"
@@ -70,11 +70,9 @@ export function PeopleScreen() {
             <rect width="100%" height="100%" fill="url(#geo3)" />
           </svg>
         </div>
-        <p className="text-white font-bold text-base relative">
-          👥 Committee Members
-        </p>
+        <p className="text-white font-bold text-base relative">👥 कमेटी सदस्य</p>
         <p className="text-xs relative mt-1" style={{ color: "#c9a84c" }}>
-          Jamia Husainiya Masjid Margoobpur
+          जामिया हुसैनिया मस्जिद मरगूबपुर
         </p>
       </div>
 
@@ -124,7 +122,7 @@ export function PeopleScreen() {
               >
                 <svg
                   role="img"
-                  aria-label="Call"
+                  aria-label="कॉल करें"
                   width="12"
                   height="12"
                   viewBox="0 0 24 24"

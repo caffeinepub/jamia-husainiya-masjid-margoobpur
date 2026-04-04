@@ -27,7 +27,6 @@ function loadPrayerTimes(): PrayerTimes {
     const s = localStorage.getItem(PRAYER_TIMES_KEY);
     if (s) return JSON.parse(s) as PrayerTimes;
   } catch {}
-  // Default from static data
   const defaults: PrayerTimes = {};
   for (const p of PRAYERS) {
     const hh = String(p.hour).padStart(2, "0");
@@ -102,9 +101,9 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
         </div>
         <div className="relative">
           <div className="text-5xl mb-2">🔐</div>
-          <h2 className="text-white font-bold text-lg">Admin Panel</h2>
+          <h2 className="text-white font-bold text-lg">एडमिन पैनल</h2>
           <p className="text-xs mt-1" style={{ color: "#c9a84c" }}>
-            Jamia Husainiya Masjid Margoobpur
+            जामिया हुसैनिया मस्जिद मरगूबपुर
           </p>
         </div>
       </div>
@@ -142,7 +141,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           style={{ background: "#1a6b3c" }}
           data-ocid="admin.login.button"
         >
-          Login
+          लॉगिन करें
         </button>
       </div>
     </div>
@@ -164,7 +163,7 @@ function NoticesManager() {
 
   function handleAdd() {
     if (!form.title.trim()) {
-      setFormError("Title जरूरी है।");
+      setFormError("शीर्षक ज़रूरी है।");
       return;
     }
     const newNotice: Notice = {
@@ -199,7 +198,7 @@ function NoticesManager() {
     <div data-ocid="admin.notices.panel">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-base" style={{ color: "#1a6b3c" }}>
-          Notices
+          सूचनाएं
         </h3>
         <button
           type="button"
@@ -211,7 +210,7 @@ function NoticesManager() {
           style={{ background: "#1a6b3c" }}
           data-ocid="admin.notice.open_modal_button"
         >
-          {showForm ? "✕ Cancel" : "+ Add Notice"}
+          {showForm ? "✕ रद्द करें" : "+ सूचना जोड़ें"}
         </button>
       </div>
 
@@ -223,7 +222,7 @@ function NoticesManager() {
           <div className="flex flex-col gap-2">
             <input
               type="text"
-              placeholder="Title *"
+              placeholder="शीर्षक *"
               value={form.title}
               onChange={(e) =>
                 setForm((f) => ({ ...f, title: e.target.value }))
@@ -233,7 +232,7 @@ function NoticesManager() {
               data-ocid="admin.notice.title.input"
             />
             <textarea
-              placeholder="Description"
+              placeholder="विवरण"
               value={form.description}
               onChange={(e) =>
                 setForm((f) => ({ ...f, description: e.target.value }))
@@ -253,7 +252,7 @@ function NoticesManager() {
             />
             <input
               type="text"
-              placeholder="Category (e.g. Event, Announcement)"
+              placeholder="श्रेणी (जैसे: कार्यक्रम, एलान)"
               value={form.category}
               onChange={(e) =>
                 setForm((f) => ({ ...f, category: e.target.value }))
@@ -272,7 +271,7 @@ function NoticesManager() {
                 className="w-4 h-4 accent-green-700"
                 data-ocid="admin.notice.important.checkbox"
               />
-              <span className="text-sm text-gray-600">Important notice</span>
+              <span className="text-sm text-gray-600">ज़रूरी सूचना</span>
             </label>
             {formError && <p className="text-xs text-red-500">{formError}</p>}
             <button
@@ -282,7 +281,7 @@ function NoticesManager() {
               style={{ background: "#1a6b3c" }}
               data-ocid="admin.notice.submit_button"
             >
-              Save Notice
+              सूचना सेव करें
             </button>
           </div>
         </div>
@@ -293,7 +292,7 @@ function NoticesManager() {
           className="bg-white rounded-2xl p-6 text-center text-sm text-gray-400"
           data-ocid="admin.notices.empty_state"
         >
-          कोई notice नहीं है। &quot;+ Add Notice&quot; दबाकर जोड़ें।
+          कोई सूचना नहीं है। &quot;+ सूचना जोड़ें&quot; दबाकर जोड़ें।
         </div>
       ) : (
         <div className="space-y-3">
@@ -314,7 +313,7 @@ function NoticesManager() {
                         className="text-xs px-2 py-0.5 rounded-full font-bold"
                         style={{ background: "#fff0f0", color: "#c0392b" }}
                       >
-                        Important
+                        ज़रूरी
                       </span>
                     )}
                   </div>
@@ -332,7 +331,7 @@ function NoticesManager() {
                   type="button"
                   onClick={() => handleDelete(notice.id)}
                   className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded-full flex-shrink-0"
-                  aria-label="Delete notice"
+                  aria-label="सूचना हटाएं"
                   data-ocid={`admin.notice.delete_button.${i + 1}`}
                 >
                   🗑
@@ -363,26 +362,26 @@ function PrayerTimesManager() {
 
   const prayerLabels: Record<
     string,
-    { arabic: string; english: string; icon: string; isSpecial?: boolean }
+    { arabic: string; hindi: string; icon: string; isSpecial?: boolean }
   > = {
-    fajr: { arabic: "الفَجْر", english: "Fajr", icon: "🌙" },
+    fajr: { arabic: "الفَجْر", hindi: "फ़जर", icon: "🌙" },
     khutba_juma: {
       arabic: "خُطْبَةُ الجُمُعَة",
-      english: "Khutba Juma",
+      hindi: "ख़ुत्बा जुमा",
       icon: "🕌",
       isSpecial: true,
     },
-    zohar: { arabic: "الظُّهْر", english: "Zohar", icon: "🌅" },
-    asr: { arabic: "العَصْر", english: "Asr", icon: "☀️" },
-    maghrib: { arabic: "المَغْرِب", english: "Maghrib", icon: "🌇" },
-    isha: { arabic: "العِشَاء", english: "Isha", icon: "🌃" },
+    zohar: { arabic: "الظُّهْر", hindi: "ज़ोहर", icon: "🌅" },
+    asr: { arabic: "العَصْر", hindi: "अस्र", icon: "☀️" },
+    maghrib: { arabic: "المَغْرِب", hindi: "मग़रिब", icon: "🌇" },
+    isha: { arabic: "العِشَاء", hindi: "इशा", icon: "🌃" },
   };
 
   return (
     <div data-ocid="admin.prayers.panel">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-base" style={{ color: "#1a6b3c" }}>
-          Prayer Times
+          नमाज़ के वक़्त
         </h3>
         <button
           type="button"
@@ -391,7 +390,7 @@ function PrayerTimesManager() {
           style={{ background: saved ? "#25a85a" : "#1a6b3c" }}
           data-ocid="admin.prayers.save_button"
         >
-          {saved ? "✓ Saved!" : "Save"}
+          {saved ? "✓ सेव हो गया!" : "सेव करें"}
         </button>
       </div>
 
@@ -419,14 +418,14 @@ function PrayerTimesManager() {
                   {label.arabic}
                 </p>
                 <p className="font-bold text-sm" style={{ color: "#1a6b3c" }}>
-                  {label.english}
+                  {label.hindi}
                 </p>
                 {label.isSpecial && (
                   <span
                     className="inline-block text-xs px-2 py-0.5 rounded-full font-bold mt-0.5"
                     style={{ background: "#c9a84c", color: "#3b2000" }}
                   >
-                    Sirf Juma
+                    सिर्फ़ जुमा
                   </span>
                 )}
               </div>
@@ -447,7 +446,7 @@ function PrayerTimesManager() {
       </div>
 
       <p className="text-xs text-gray-400 mt-4 text-center">
-        Changes will reflect on the Namaz screen immediately.
+        बदलाव तुरंत नमाज़ स्क्रीन पर दिखेंगे।
       </p>
     </div>
   );
@@ -468,9 +467,9 @@ export function AdminScreen() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
-            Admin Panel
+            एडमिन पैनल
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">Masjid Management</p>
+          <p className="text-xs text-gray-500 mt-0.5">मस्जिद प्रबंधन</p>
         </div>
         <button
           type="button"
@@ -482,7 +481,7 @@ export function AdminScreen() {
           style={{ borderColor: "#1a6b3c", color: "#1a6b3c" }}
           data-ocid="admin.logout.button"
         >
-          Logout
+          लॉगआउट
         </button>
       </div>
 
@@ -505,7 +504,7 @@ export function AdminScreen() {
             }}
             data-ocid={`admin.${t}.tab`}
           >
-            {t === "notices" ? "📢 Notices" : "🕌 Prayer Times"}
+            {t === "notices" ? "📢 सूचनाएं" : "🕌 नमाज़ के वक़्त"}
           </button>
         ))}
       </div>

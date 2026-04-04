@@ -10,13 +10,22 @@ export function HomeScreen({ onTabChange }: Props) {
   const nextPrayer = getNextPrayer();
   const latestNotice = NOTICES[0] ?? null;
 
+  const prayerHindiNames: Record<string, string> = {
+    fajr: "फ़जर",
+    khutba_juma: "ख़ुत्बा जुमा",
+    zohar: "ज़ोहर",
+    asr: "अस्र",
+    maghrib: "मग़रिब",
+    isha: "इशा",
+  };
+
   return (
     <div data-ocid="home.page">
       {/* Mosque illustration */}
       <div className="relative">
         <img
           src="/assets/generated/mosque-illustration.dim_800x400.png"
-          alt="Jamia Husainiya Masjid Margoobpur"
+          alt="जामिया हुसैनिया मस्जिद मरगूबपुर"
           className="w-full object-cover"
           style={{
             maxHeight: "200px",
@@ -42,7 +51,7 @@ export function HomeScreen({ onTabChange }: Props) {
             <span className="text-2xl">🕌</span>
             <div>
               <h2 className="font-bold text-lg" style={{ color: "#1a6b3c" }}>
-                Assalamu Alaikum
+                अस्सलामु अलैकुम
               </h2>
               <p
                 className="text-xs"
@@ -53,9 +62,9 @@ export function HomeScreen({ onTabChange }: Props) {
             </div>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Welcome to Jamia Husainiya Masjid Margoobpur. May Allah bless you
-            and your family. Join us for daily prayers, Friday Khutba, and
-            community events.
+            जामिया हुसैनिया मस्जिद मरगूबपुर में आपका स्वागत है। अल्लाह आपको और आपके परिवार
+            को बरकत दे। रोज़ाना की नमाज़, जुमे की ख़ुत्बा और सामुदायिक कार्यक्रमों में शामिल
+            हों।
           </p>
         </div>
 
@@ -73,10 +82,10 @@ export function HomeScreen({ onTabChange }: Props) {
               className="text-xs font-semibold mb-0.5"
               style={{ color: "#c9a84c" }}
             >
-              NEXT PRAYER
+              अगली नमाज़
             </p>
             <p className="text-white font-bold text-base">
-              {nextPrayer.english}
+              {prayerHindiNames[nextPrayer.id] ?? nextPrayer.english}
             </p>
             <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
               {nextPrayer.arabic}
@@ -88,7 +97,7 @@ export function HomeScreen({ onTabChange }: Props) {
               className="text-xs px-2 py-0.5 rounded-full font-semibold"
               style={{ background: "#c9a84c", color: "#0f4a29" }}
             >
-              Soon
+              जल्द ही
             </span>
           </div>
         </button>
@@ -100,7 +109,7 @@ export function HomeScreen({ onTabChange }: Props) {
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm" style={{ color: "#1a6b3c" }}>
-              Latest Announcement
+              ताज़ा सूचना
             </h3>
             <button
               type="button"
@@ -109,7 +118,7 @@ export function HomeScreen({ onTabChange }: Props) {
               onClick={() => onTabChange("notice")}
               data-ocid="home.view_all.button"
             >
-              View All
+              सभी देखें
             </button>
           </div>
           {latestNotice ? (
@@ -123,7 +132,7 @@ export function HomeScreen({ onTabChange }: Props) {
                     className="text-xs px-2 py-0.5 rounded-full font-bold"
                     style={{ background: "#fff0f0", color: "#c0392b" }}
                   >
-                    Important
+                    ज़रूरी
                   </span>
                 )}
               </div>
@@ -133,20 +142,22 @@ export function HomeScreen({ onTabChange }: Props) {
               </p>
             </div>
           ) : (
-            <p className="text-xs text-gray-400">No announcements yet.</p>
+            <p className="text-xs text-gray-400">अभी कोई सूचना नहीं है।</p>
           )}
         </div>
 
         {/* Prayer times mini strip */}
         <div className="bg-white rounded-2xl p-4 shadow-card">
           <h3 className="font-bold text-sm mb-3" style={{ color: "#1a6b3c" }}>
-            Today's Prayer Times
+            आज की नमाज़ के वक़्त
           </h3>
           <div className="flex justify-between">
-            {PRAYERS.map((p) => (
+            {PRAYERS.filter((p) => !p.isSpecial).map((p) => (
               <div key={p.id} className="flex flex-col items-center gap-1">
                 <span className="text-lg">{p.icon}</span>
-                <span className="text-[10px] text-gray-500">{p.english}</span>
+                <span className="text-[10px] text-gray-500">
+                  {prayerHindiNames[p.id] ?? p.english}
+                </span>
                 <span
                   className="text-xs font-bold"
                   style={{ color: "#1a6b3c" }}

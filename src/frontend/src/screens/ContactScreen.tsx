@@ -27,7 +27,7 @@ export function ContactScreen() {
 
   function handleAdd() {
     if (!form.name.trim() || !form.phone.trim()) {
-      setError("नाम और फोन नंबर जरूरी है।");
+      setError("नाम और फोन नंबर ज़रूरी है।");
       return;
     }
     setCommittee((prev) => [
@@ -51,10 +51,10 @@ export function ContactScreen() {
     <div className="px-4 py-5" data-ocid="contact.page">
       <div className="mb-5">
         <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
-          Contact Us
+          संपर्क करें
         </h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Reach out to Jamia Husainiya Masjid Margoobpur
+          जामिया हुसैनिया मस्जिद मरगूबपुर से जुड़ें
         </p>
       </div>
 
@@ -95,9 +95,7 @@ export function ContactScreen() {
         <div className="relative flex items-center gap-3">
           <span className="text-4xl">🕌</span>
           <div>
-            <h3 className="font-bold text-base">
-              Jamia Husainiya Masjid Margoobpur
-            </h3>
+            <h3 className="font-bold text-base">जामिया हुसैनिया मस्जिद मरगूबपुर</h3>
             <p className="text-xs mt-0.5" style={{ color: "#c9a84c" }}>
               جامعه حسينيه مسجد مرقوبپور
             </p>
@@ -114,12 +112,12 @@ export function ContactScreen() {
           <span className="text-xl mt-0.5">📍</span>
           <div>
             <p className="font-semibold text-sm" style={{ color: "#1a6b3c" }}>
-              Address
+              पता
             </p>
             <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-              Jamia Husainiya Masjid, Margoobpur Deedaheri,
+              जामिया हुसैनिया मस्जिद, मरगूबपुर दीदहेरी,
               <br />
-              Haridwar, Uttarakhand — 247667
+              हरिद्वार, उत्तराखंड — 247667
             </p>
           </div>
         </div>
@@ -134,7 +132,7 @@ export function ContactScreen() {
           data-ocid="contact.call.button"
         >
           <span className="text-lg">📞</span>
-          Call Now
+          अभी कॉल करें
         </a>
         <a
           href="https://wa.me/918958999299"
@@ -156,7 +154,7 @@ export function ContactScreen() {
           style={{ borderColor: "#e8f5ee" }}
         >
           <h3 className="font-bold text-sm" style={{ color: "#1a6b3c" }}>
-            Masjid Committee
+            मस्जिद कमेटी
           </h3>
           <button
             type="button"
@@ -167,7 +165,7 @@ export function ContactScreen() {
             className="text-xs font-bold px-3 py-1.5 rounded-full text-white"
             style={{ background: "#1a6b3c" }}
           >
-            {showForm ? "✕ Cancel" : "+ Add"}
+            {showForm ? "✕ रद्द करें" : "+ जोड़ें"}
           </button>
         </div>
 
@@ -190,7 +188,7 @@ export function ContactScreen() {
               />
               <input
                 type="text"
-                placeholder="Role (e.g. Imam, Secretary)"
+                placeholder="पद (जैसे: इमाम, सेक्रेटरी)"
                 value={form.role}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, role: e.target.value }))
@@ -200,7 +198,7 @@ export function ContactScreen() {
               />
               <input
                 type="tel"
-                placeholder="फोन नंबर (Phone) *"
+                placeholder="फोन नंबर *"
                 value={form.phone}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, phone: e.target.value }))
@@ -215,7 +213,7 @@ export function ContactScreen() {
                 className="w-full rounded-xl py-2 text-sm font-bold text-white"
                 style={{ background: "#1a6b3c" }}
               >
-                Save
+                सेव करें
               </button>
             </div>
           </div>
@@ -223,7 +221,7 @@ export function ContactScreen() {
 
         {committee.length === 0 && !showForm ? (
           <div className="px-4 py-6 text-center text-sm text-gray-400">
-            कोई member नहीं है। &quot;+ Add&quot; दबाकर जोड़ें।
+            कोई member नहीं है। &quot;+ जोड़ें&quot; दबाकर जोड़ें।
           </div>
         ) : (
           committee.map((member, index) => (
@@ -256,7 +254,7 @@ export function ContactScreen() {
                   type="button"
                   onClick={() => handleDelete(index)}
                   className="text-xs text-red-400 hover:text-red-600 px-1 py-1 rounded-full"
-                  aria-label="Delete"
+                  aria-label="हटाएं"
                 >
                   ✕
                 </button>

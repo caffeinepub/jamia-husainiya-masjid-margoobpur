@@ -163,13 +163,13 @@ function AdminSVG({ active }: { active: boolean }) {
 
 const TABS: { id: Tab; label: string; Icon: React.FC<{ active: boolean }> }[] =
   [
-    { id: "home", label: "Home", Icon: HomeSVG },
-    { id: "namaz", label: "Namaz", Icon: MosqueSVG },
-    { id: "notice", label: "Notice", Icon: BellSVG },
-    { id: "contact", label: "Contact", Icon: PhoneSVG },
-    { id: "map", label: "Map", Icon: MapPinSVG },
+    { id: "home", label: "होम", Icon: HomeSVG },
+    { id: "namaz", label: "नमाज़", Icon: MosqueSVG },
+    { id: "notice", label: "सूचना", Icon: BellSVG },
+    { id: "contact", label: "संपर्क", Icon: PhoneSVG },
+    { id: "map", label: "नक्शा", Icon: MapPinSVG },
     { id: "people", label: "लोग", Icon: PeopleSVG },
-    { id: "admin", label: "Admin", Icon: AdminSVG },
+    { id: "admin", label: "एडमिन", Icon: AdminSVG },
   ];
 
 export default function App() {
@@ -219,7 +219,7 @@ export default function App() {
                 ☪
               </span>
               <h1 className="text-white font-bold text-lg leading-tight tracking-wide text-center">
-                Jamia Husainiya Masjid Margoobpur
+                जामिया हुसैनिया मस्जिद मरगूबपुर
               </h1>
               <span className="text-2xl" style={{ color: "#c9a84c" }}>
                 ☪
