@@ -100,6 +100,12 @@ function formatCountdown(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function setNamazAlarm(prayer: Prayer) {
+  const label = encodeURIComponent(`${prayer.english} Namaz`);
+  const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=${label};i.android.intent.extra.alarm.HOUR=${prayer.hour};i.android.intent.extra.alarm.MINUTES=${prayer.minute};END`;
+  window.location.href = intentUrl;
+}
+
 export function NamazScreen() {
   const [savedTimes, setSavedTimes] = useState<PrayerTimes | null>(
     loadPrayerTimes,
@@ -356,6 +362,7 @@ export function NamazScreen() {
         {sortedPrayers.map((prayer) => {
           const isNext = prayer.id === nextPrayer.id;
           const isKhutbaHidden = prayer.isSpecial && !isFriday;
+          const showAlarmBtn = !prayer.isSpecial || isFriday;
           return (
             <div
               key={prayer.id}
@@ -399,7 +406,7 @@ export function NamazScreen() {
                   </span>
                 )}
               </div>
-              <div className="text-right">
+              <div className="text-right flex flex-col items-end gap-2">
                 <p
                   className="font-bold text-xl"
                   style={{ color: isNext ? "white" : "#1a6b3c" }}
@@ -413,6 +420,23 @@ export function NamazScreen() {
                   >
                     Next Prayer
                   </span>
+                )}
+                {showAlarmBtn && (
+                  <button
+                    type="button"
+                    onClick={() => setNamazAlarm(prayer)}
+                    className="text-xs px-2 py-1 rounded-full font-medium transition-all"
+                    style={{
+                      border: isNext
+                        ? "1.5px solid white"
+                        : "1.5px solid #1a6b3c",
+                      color: isNext ? "white" : "#1a6b3c",
+                      background: "transparent",
+                    }}
+                    data-ocid={`namaz.${prayer.id}.button`}
+                  >
+                    ⏰ Alarm Set करें
+                  </button>
                 )}
               </div>
             </div>
