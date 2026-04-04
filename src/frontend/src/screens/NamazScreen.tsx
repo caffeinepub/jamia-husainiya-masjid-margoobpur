@@ -101,9 +101,16 @@ function formatCountdown(seconds: number): string {
 }
 
 function setNamazAlarm(prayer: Prayer) {
-  const label = encodeURIComponent(`${prayer.english} Namaz`);
-  const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=${label};i.android.intent.extra.alarm.HOUR=${prayer.hour};i.android.intent.extra.alarm.MINUTES=${prayer.minute};END`;
-  window.location.href = intentUrl;
+  const isAndroid = navigator.userAgent.toLowerCase().includes("android");
+  if (isAndroid) {
+    const label = encodeURIComponent(`${prayer.english} Namaz`);
+    const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=${label};i.android.intent.extra.alarm.HOUR=${prayer.hour};i.android.intent.extra.alarm.MINUTES=${prayer.minute};END`;
+    window.open(intentUrl, "_blank");
+  } else {
+    window.alert(
+      `${prayer.english} Namaz\nसमय: ${prayer.time}\n\nकृपया अपने Clock app में यह alarm set करें।`,
+    );
+  }
 }
 
 export function NamazScreen() {
