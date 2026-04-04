@@ -40,36 +40,27 @@ function getEffectivePrayers(savedTimes: PrayerTimes | null): Prayer[] {
   });
 }
 
-// Get next prayer from a list, sorted by time (excluding special prayers on non-Friday)
 function getNextPrayerFromList(prayers: Prayer[]): Prayer {
   const now = new Date();
   const isFriday = now.getDay() === 5;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  // Filter out special prayers on non-Friday, then sort by time to find correct next
   const activePrayers = prayers
     .filter((p) => !p.isSpecial || isFriday)
     .slice()
     .sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
-
   for (const prayer of activePrayers) {
     if (prayer.hour * 60 + prayer.minute > currentMinutes) return prayer;
   }
-  // Wrap around to first prayer of next day
   return activePrayers[0] ?? prayers[0];
 }
 
-// Sort prayers for display: on Friday, Khutba Juma goes to top; otherwise it goes to bottom
 function sortPrayers(prayers: Prayer[], isFriday: boolean): Prayer[] {
   const special = prayers.filter((p) => p.isSpecial);
   const regular = prayers.filter((p) => !p.isSpecial);
-  if (isFriday) {
-    return [...special, ...regular];
-  }
+  if (isFriday) return [...special, ...regular];
   return [...regular, ...special];
 }
 
-// Web Audio bell sound
 function createBellContext() {
   const ctx = new (
     window.AudioContext ||
@@ -100,17 +91,59 @@ function formatCountdown(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function setNamazAlarm(prayer: Prayer) {
-  const isAndroid = navigator.userAgent.toLowerCase().includes("android");
+// Build Android alarm intent URL
+function buildAlarmIntentUrl(prayer: Prayer): string {
+  const label = encodeURIComponent(`${prayer.english} Namaz`);
+  return `intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=${label};i.android.intent.extra.alarm.HOUR=${prayer.hour};i.android.intent.extra.alarm.MINUTES=${prayer.minute};END`;
+}
+
+// AlarmButton: uses <a href> which is more reliable than window.location for intent:// on Android
+function AlarmButton({ prayer, isNext }: { prayer: Prayer; isNext: boolean }) {
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const intentUrl = buildAlarmIntentUrl(prayer);
+
+  const style: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "12px",
+    padding: "4px 10px",
+    borderRadius: "9999px",
+    fontWeight: 600,
+    textDecoration: "none",
+    border: isNext ? "1.5px solid white" : "1.5px solid #1a6b3c",
+    color: isNext ? "white" : "#1a6b3c",
+    background: "transparent",
+    cursor: "pointer",
+  };
+
   if (isAndroid) {
-    const label = encodeURIComponent(`${prayer.english} Namaz`);
-    const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=${label};i.android.intent.extra.alarm.HOUR=${prayer.hour};i.android.intent.extra.alarm.MINUTES=${prayer.minute};END`;
-    window.open(intentUrl, "_blank");
-  } else {
-    window.alert(
-      `${prayer.english} Namaz\nसमय: ${prayer.time}\n\nकृपया अपने Clock app में यह alarm set करें।`,
+    return (
+      <a
+        href={intentUrl}
+        style={style}
+        data-ocid={`namaz.${prayer.id}.alarm_btn`}
+      >
+        🔔 Alarm Set کریں
+      </a>
     );
   }
+
+  // Non-Android: show alert with time info
+  return (
+    <button
+      type="button"
+      style={style}
+      onClick={() =>
+        window.alert(
+          `${prayer.english} Namaz\nWaqt: ${prayer.time}\n\nApne Clock app mein yeh alarm set karein.`,
+        )
+      }
+      data-ocid={`namaz.${prayer.id}.alarm_btn`}
+    >
+      🔔 Alarm Set کریں
+    </button>
+  );
 }
 
 export function NamazScreen() {
@@ -128,13 +161,10 @@ export function NamazScreen() {
   const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Reload prayer times on focus AND on storage change (so Admin saves reflect immediately)
   useEffect(() => {
     const onFocus = () => setSavedTimes(loadPrayerTimes());
     const onStorage = (e: StorageEvent) => {
-      if (e.key === PRAYER_TIMES_KEY) {
-        setSavedTimes(loadPrayerTimes());
-      }
+      if (e.key === PRAYER_TIMES_KEY) setSavedTimes(loadPrayerTimes());
     };
     window.addEventListener("focus", onFocus);
     window.addEventListener("storage", onStorage);
@@ -144,7 +174,6 @@ export function NamazScreen() {
     };
   }, []);
 
-  // Check every 60 seconds (and immediately on mount) if a prayer time has arrived
   useEffect(() => {
     const check = () => {
       if (alarmActive) return;
@@ -161,7 +190,7 @@ export function NamazScreen() {
         }
       }
     };
-    check(); // immediate check on mount
+    check();
     intervalRef.current = setInterval(check, 60000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -173,30 +202,17 @@ export function NamazScreen() {
     setAlarmStopped(false);
     setAlarmPrayer(prayerId);
     setCountdown(AUTO_STOP_SECONDS);
-
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = createBellContext();
-    }
+    if (!audioCtxRef.current) audioCtxRef.current = createBellContext();
     const ctx = audioCtxRef.current;
     playBell(ctx);
-    bellIntervalRef.current = setInterval(() => {
-      playBell(ctx);
-    }, 3000);
-
-    // Countdown timer — decrement every second
+    bellIntervalRef.current = setInterval(() => playBell(ctx), 3000);
     countdownRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          return 0;
-        }
-        return prev - 1;
-      });
+      setCountdown((prev) => (prev <= 1 ? 0 : prev - 1));
     }, 1000);
-
-    // Auto-stop after 15 minutes
-    autoStopRef.current = setTimeout(() => {
-      stopAlarm(true);
-    }, AUTO_STOP_SECONDS * 1000);
+    autoStopRef.current = setTimeout(
+      () => stopAlarm(true),
+      AUTO_STOP_SECONDS * 1000,
+    );
   }
 
   function stopAlarm(auto = false) {
@@ -220,20 +236,16 @@ export function NamazScreen() {
     }
   }
 
-  // Manual test alarm button handler
   function testAlarm() {
     startAlarm("manual");
   }
 
   const prayers = getEffectivePrayers(savedTimes);
-  // Use corrected getNextPrayerFromList that sorts by time before finding next
   const nextPrayer = savedTimes
     ? getNextPrayerFromList(prayers)
     : getNextPrayer();
-
   const isFriday = new Date().getDay() === 5;
   const sortedPrayers = sortPrayers(prayers, isFriday);
-
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "long",
     year: "numeric",
@@ -243,7 +255,6 @@ export function NamazScreen() {
 
   return (
     <div className="px-4 py-5" data-ocid="namaz.page">
-      {/* Auto-stopped message */}
       {alarmStopped && (
         <div
           className="rounded-2xl p-4 mb-4 text-center shadow-lg"
@@ -251,12 +262,11 @@ export function NamazScreen() {
           data-ocid="namaz.alarm.success_state"
         >
           <p className="text-white font-bold text-base">
-            🕌 Bell बंद हो गई — अगली नमाज़ का इंतज़ार
+            🕌 Bell بند ہو گئی — اگلی نماز کا انتظار
           </p>
         </div>
       )}
 
-      {/* Alarm Banner */}
       {alarmActive && (
         <div
           className="rounded-2xl p-4 mb-4 flex flex-col items-center gap-3 shadow-lg"
@@ -268,18 +278,17 @@ export function NamazScreen() {
             <div className="text-white text-center">
               <p className="font-bold text-base">
                 {alarmPrayer === "manual"
-                  ? "अज़ान का वक्त हो गया!"
-                  : `${prayers.find((p) => p.id === alarmPrayer)?.english ?? ""} का वक्त हो गया!`}
+                  ? "اذان کا وقت ہو گیا!"
+                  : `${prayers.find((p) => p.id === alarmPrayer)?.english ?? ""} کا وقت ہو گیا!`}
               </p>
-              <p className="text-xs opacity-80">मस्जिद की तरफ चलें 🕌</p>
+              <p className="text-xs opacity-80">مسجد کی طرف چلیں 🕌</p>
             </div>
           </div>
-          {/* Countdown */}
           <div
             className="px-4 py-1.5 rounded-full text-sm font-mono font-bold"
             style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
           >
-            ⏱ {formatCountdown(countdown)} में auto-बंद
+            ⏱ {formatCountdown(countdown)} میں auto-بند
           </div>
           <button
             type="button"
@@ -288,12 +297,11 @@ export function NamazScreen() {
             style={{ background: "white", color: "#b91c1c" }}
             data-ocid="namaz.alarm.close_button"
           >
-            ✅ मस्जिद पहुँच गया — Bell बंद करो
+            ✅ مسجد پہنچ گیا — Bell بند کرو
           </button>
         </div>
       )}
 
-      {/* Title */}
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
@@ -301,7 +309,6 @@ export function NamazScreen() {
           </h2>
           <p className="text-xs text-gray-500 mt-0.5">{today}</p>
         </div>
-        {/* Bell test button */}
         {!alarmActive && (
           <button
             type="button"
@@ -316,7 +323,6 @@ export function NamazScreen() {
         )}
       </div>
 
-      {/* Decorative Islamic banner */}
       <div
         className="rounded-2xl p-4 mb-5 text-center relative overflow-hidden"
         style={{ background: "#1a6b3c" }}
@@ -364,12 +370,36 @@ export function NamazScreen() {
         )}
       </div>
 
-      {/* Prayer cards */}
+      {/* Namaz Alarm Setup Section */}
+      <div
+        className="rounded-2xl p-4 mb-5 shadow"
+        style={{ background: "#f0f9f4", border: "1.5px solid #1a6b3c" }}
+        data-ocid="namaz.alarm_setup.section"
+      >
+        <h3 className="font-bold text-base mb-1" style={{ color: "#1a6b3c" }}>
+          🕌 Namaz Alarm Setup
+        </h3>
+        <p className="text-xs text-gray-600 mb-3">
+          Neeche diye gaye buttons par click karke apne phone ke Clock app mein
+          alarm set karein.
+        </p>
+        <div className="flex flex-col gap-2">
+          {sortedPrayers
+            .filter((p) => !p.isSpecial)
+            .map((prayer) => (
+              <AlarmButton key={prayer.id} prayer={prayer} isNext={false} />
+            ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-3">
+          Clock app khulega aur alarm pre-filled ho jayega. Alarm save karne ke
+          liye Save/OK press karein.
+        </p>
+      </div>
+
       <div className="space-y-3">
         {sortedPrayers.map((prayer) => {
           const isNext = prayer.id === nextPrayer.id;
           const isKhutbaHidden = prayer.isSpecial && !isFriday;
-          const showAlarmBtn = !prayer.isSpecial || isFriday;
           return (
             <div
               key={prayer.id}
@@ -409,7 +439,7 @@ export function NamazScreen() {
                     className="inline-block text-xs px-2 py-0.5 rounded-full font-bold mt-1"
                     style={{ background: "#c9a84c", color: "#3b2000" }}
                   >
-                    {isFriday ? "आज Juma है ✨" : "Sirf Juma"}
+                    {isFriday ? "آج Juma ہے ✨" : "Sirf Juma"}
                   </span>
                 )}
               </div>
@@ -427,23 +457,6 @@ export function NamazScreen() {
                   >
                     Next Prayer
                   </span>
-                )}
-                {showAlarmBtn && (
-                  <button
-                    type="button"
-                    onClick={() => setNamazAlarm(prayer)}
-                    className="text-xs px-2 py-1 rounded-full font-medium transition-all"
-                    style={{
-                      border: isNext
-                        ? "1.5px solid white"
-                        : "1.5px solid #1a6b3c",
-                      color: isNext ? "white" : "#1a6b3c",
-                      background: "transparent",
-                    }}
-                    data-ocid={`namaz.${prayer.id}.button`}
-                  >
-                    ⏰ Alarm Set करें
-                  </button>
                 )}
               </div>
             </div>
