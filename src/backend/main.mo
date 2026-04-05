@@ -5,12 +5,12 @@ import List "mo:core/List";
 import Iter "mo:core/Iter";
 import Nat "mo:core/Nat";
 import Order "mo:core/Order";
-import Migration "migration";
+
 
 // Adhere to safe persistent actor pattern MOR (Map-only Runtime) <https://internetcomputer.org/docs/current/motoko/main/core/actor-lifecycle#persistent-actors-patterns>
 
 // Mark with-clause as first top-level element of actor <https://internetcomputer.org/docs/current/motoko/experimental-features/with-clause#with-clause-placement>
-(with migration = Migration.run)
+
 actor {
   let adminPin = "786";
   var nextAnnouncementId = 1;
