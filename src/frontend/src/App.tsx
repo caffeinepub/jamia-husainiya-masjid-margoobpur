@@ -21,29 +21,36 @@ function HomeSVG({ active }: { active: boolean }) {
     <svg
       role="img"
       aria-label="Home"
-      width="20"
-      height="20"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.65)"}
-      strokeWidth="2"
+      fill={active ? "#c9a84c" : "none"}
+      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
-      <path d="M9 21V12h6v9" />
+      <path
+        d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"
+        fill={active ? "rgba(201,168,76,0.2)" : "none"}
+      />
+      <path
+        d="M9 21V12h6v9"
+        stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+        fill="none"
+      />
     </svg>
   );
 }
 
 function MosqueSVG({ active }: { active: boolean }) {
-  const c = active ? "#c9a84c" : "rgba(255,255,255,0.65)";
+  const c = active ? "#c9a84c" : "rgba(255,255,255,0.6)";
   return (
     <svg
       role="img"
       aria-label="Namaz"
-      width="20"
-      height="20"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
       fill="none"
       stroke={c}
@@ -51,9 +58,15 @@ function MosqueSVG({ active }: { active: boolean }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M12 2C10.5 4 9 5.5 9 7c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2 0-1.5-1.5-3-3-5z" />
+      <path
+        d="M12 2C10.5 4 9 5.5 9 7c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2 0-1.5-1.5-3-3-5z"
+        fill={active ? "rgba(201,168,76,0.2)" : "none"}
+      />
       <path d="M7 9h10v2H7z" />
-      <path d="M5 11h14v10H5z" />
+      <path
+        d="M5 11h14v10H5z"
+        fill={active ? "rgba(201,168,76,0.1)" : "none"}
+      />
       <path d="M9 21v-5h6v5" />
       <path d="M5 21h14" />
     </svg>
@@ -65,17 +78,17 @@ function BellSVG({ active }: { active: boolean }) {
     <svg
       role="img"
       aria-label="Notice"
-      width="20"
-      height="20"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.65)"}
-      strokeWidth="2"
+      fill={active ? "rgba(201,168,76,0.2)" : "none"}
+      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" />
     </svg>
   );
 }
@@ -85,12 +98,12 @@ function PhoneSVG({ active }: { active: boolean }) {
     <svg
       role="img"
       aria-label="Contact"
-      width="20"
-      height="20"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.65)"}
-      strokeWidth="2"
+      fill={active ? "rgba(201,168,76,0.2)" : "none"}
+      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -104,17 +117,26 @@ function MapPinSVG({ active }: { active: boolean }) {
     <svg
       role="img"
       aria-label="Map"
-      width="20"
-      height="20"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.65)"}
-      strokeWidth="2"
+      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-      <circle cx="12" cy="10" r="3" />
+      <path
+        d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+        fill={active ? "rgba(201,168,76,0.2)" : "none"}
+      />
+      <circle
+        cx="12"
+        cy="10"
+        r="3"
+        fill={active ? "#c9a84c" : "none"}
+        stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+      />
     </svg>
   );
 }
@@ -124,17 +146,22 @@ function PeopleSVG({ active }: { active: boolean }) {
     <svg
       role="img"
       aria-label="People"
-      width="20"
-      height="20"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.65)"}
-      strokeWidth="2"
+      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
+      <circle
+        cx="9"
+        cy="7"
+        r="4"
+        fill={active ? "rgba(201,168,76,0.15)" : "none"}
+      />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
@@ -146,17 +173,22 @@ function AdminSVG({ active }: { active: boolean }) {
     <svg
       role="img"
       aria-label="Admin"
-      width="20"
-      height="20"
+      width="22"
+      height="22"
       viewBox="0 0 24 24"
       fill="none"
-      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.65)"}
-      strokeWidth="2"
+      stroke={active ? "#c9a84c" : "rgba(255,255,255,0.6)"}
+      strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      <circle
+        cx="12"
+        cy="12"
+        r="3"
+        fill={active ? "rgba(201,168,76,0.2)" : "none"}
+      />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   );
 }
@@ -176,8 +208,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
 
   return (
-    <div className="min-h-screen bg-[#d8ead8] flex items-center justify-center">
-      <div className="w-full max-w-[430px] min-h-screen bg-[#f0f7f0] relative flex flex-col shadow-2xl overflow-hidden">
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "#d0e8d8" }}
+    >
+      <div
+        className="w-full max-w-[430px] min-h-screen relative flex flex-col shadow-2xl overflow-hidden"
+        style={{ background: "#f0f7f0" }}
+      >
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto pb-20">
           {activeTab === "home" && <HomeScreen onTabChange={setActiveTab} />}
@@ -192,7 +230,11 @@ export default function App() {
         {/* Bottom Navigation */}
         <nav
           className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-20 flex"
-          style={{ background: "#0f4a29" }}
+          style={{
+            background: "#0d3d1f",
+            boxShadow: "0 -2px 16px rgba(0,0,0,0.25)",
+            borderTop: "1px solid rgba(201,168,76,0.2)",
+          }}
           data-ocid="nav.panel"
         >
           {TABS.map((tab) => {
@@ -202,16 +244,23 @@ export default function App() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className="flex-1 flex flex-col items-center justify-center py-1.5 relative transition-all"
+                className="flex-1 flex flex-col items-center justify-center py-2 relative transition-all"
+                style={{
+                  background: isActive
+                    ? "rgba(201,168,76,0.12)"
+                    : "transparent",
+                }}
                 data-ocid={`nav.${tab.id}.link`}
               >
+                {/* Gold top indicator bar */}
                 {isActive && (
                   <span
-                    className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-sm"
+                    className="absolute top-0 left-1/2 -translate-x-1/2"
                     style={{
                       background: "#c9a84c",
-                      height: "3px",
-                      width: "24px",
+                      height: "2px",
+                      width: "28px",
+                      borderRadius: "0 0 4px 4px",
                     }}
                   />
                 )}
@@ -219,7 +268,7 @@ export default function App() {
                 <span
                   className="text-[9px] mt-0.5 font-semibold"
                   style={{
-                    color: isActive ? "#c9a84c" : "rgba(255,255,255,0.65)",
+                    color: isActive ? "#c9a84c" : "rgba(255,255,255,0.55)",
                   }}
                 >
                   {tab.label}

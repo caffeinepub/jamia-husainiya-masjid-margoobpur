@@ -1,3 +1,4 @@
+import { IslamicHeader } from "../components/IslamicHeader";
 import { useCommitteeMembers } from "../hooks/useQueries";
 
 export function PeopleScreen() {
@@ -5,18 +6,8 @@ export function PeopleScreen() {
 
   return (
     <div className="flex flex-col">
-      {/* Header */}
-      <div
-        className="px-4 py-4"
-        style={{
-          background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
-        }}
-      >
-        <div className="text-white font-bold text-base">👥 Log / People</div>
-        <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-          Masjid Committee members
-        </div>
-      </div>
+      {/* Islamic Header */}
+      <IslamicHeader subtitle="👥 Log / People" />
 
       <div className="p-4 flex flex-col gap-3">
         {isLoading ? (
@@ -24,19 +15,19 @@ export function PeopleScreen() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-20 rounded-xl animate-pulse"
+                className="h-20 rounded-2xl animate-pulse"
                 style={{ background: "#e8f5e9" }}
               />
             ))}
           </div>
         ) : members.length === 0 ? (
           <div
-            className="rounded-2xl p-8 flex flex-col items-center gap-3 text-center"
+            className="rounded-2xl p-8 flex flex-col items-center gap-3 text-center shadow-sm"
             style={{ background: "white", border: "1px solid #e8f5e9" }}
             data-ocid="people.empty_state"
           >
             <span className="text-4xl">👤</span>
-            <div className="font-bold" style={{ color: "#0f4a29" }}>
+            <div className="font-bold" style={{ color: "#0d3d1f" }}>
               Koi Member Nahi
             </div>
             <div className="text-sm" style={{ color: "#888" }}>
@@ -48,11 +39,10 @@ export function PeopleScreen() {
             {members.map((member, i) => (
               <div
                 key={String(member.id)}
-                className="rounded-2xl overflow-hidden"
+                className="rounded-2xl overflow-hidden shadow-md"
                 style={{
                   background: "white",
                   border: "1px solid #e8f5e9",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                 }}
                 data-ocid={`people.member.item.${i + 1}`}
               >
@@ -66,7 +56,7 @@ export function PeopleScreen() {
                     {member.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold" style={{ color: "#0f4a29" }}>
+                    <div className="font-bold" style={{ color: "#0d3d1f" }}>
                       {member.name}
                     </div>
                     <div className="text-sm" style={{ color: "#888" }}>

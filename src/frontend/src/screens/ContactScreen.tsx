@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IslamicHeader } from "../components/IslamicHeader";
 import {
   useAddCommitteeMember,
   useCommitteeMembers,
@@ -73,33 +74,25 @@ export function ContactScreen() {
 
   return (
     <div className="flex flex-col">
-      {/* Header */}
-      <div
-        className="px-4 py-4"
-        style={{
-          background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
-        }}
-      >
-        <div className="text-white font-bold text-base">
-          📞 Contact / Sampark
-        </div>
-        <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-          Masjid se contact karo
-        </div>
-      </div>
+      {/* Islamic Header */}
+      <IslamicHeader subtitle="📞 Contact / Sampark" />
 
       <div className="p-4 flex flex-col gap-4">
         {/* Main contact card */}
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden shadow-md"
           style={{
             background: "white",
             border: "1px solid #e8f5e9",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           }}
         >
-          <div className="px-4 py-3" style={{ background: "#e8f5e9" }}>
-            <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
+          <div
+            className="px-4 py-3"
+            style={{
+              background: "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
+            }}
+          >
+            <div className="font-bold text-sm text-white">
               🕌 Jamia Husainiya Masjid Margoobpur
             </div>
           </div>
@@ -107,7 +100,7 @@ export function ContactScreen() {
             <div className="text-sm" style={{ color: "#555" }}>
               📍 Margoobpur Deedaheri, Haridwar, Uttarakhand — 247667
             </div>
-            <div className="text-sm font-semibold" style={{ color: "#0f4a29" }}>
+            <div className="text-sm font-semibold" style={{ color: "#0d3d1f" }}>
               📞 089589 99299
             </div>
             <div className="flex gap-3">
@@ -136,7 +129,7 @@ export function ContactScreen() {
         {/* Committee Members */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
+            <div className="font-bold text-sm" style={{ color: "#0d3d1f" }}>
               👥 Masjid Committee
             </div>
             <button
@@ -153,19 +146,21 @@ export function ContactScreen() {
           {/* Add Form */}
           {showAddForm && (
             <div
-              className="rounded-xl overflow-hidden mb-3"
+              className="rounded-2xl overflow-hidden mb-3 shadow-md"
               style={{
                 background: "white",
                 border: "1px solid #e8f5e9",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
               }}
               data-ocid="contact.add_member.modal"
             >
-              <div className="px-4 py-2" style={{ background: "#e8f5e9" }}>
-                <span
-                  className="font-bold text-sm"
-                  style={{ color: "#0f4a29" }}
-                >
+              <div
+                className="px-4 py-2"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
+                }}
+              >
+                <span className="font-bold text-sm text-white">
                   Naya Member Add karo
                 </span>
               </div>
@@ -271,11 +266,10 @@ export function ContactScreen() {
           {/* Delete PIN prompt */}
           {deletingId !== null && (
             <div
-              className="rounded-xl p-4 mb-3"
+              className="rounded-2xl p-4 mb-3 shadow-md"
               style={{
                 background: "white",
                 border: "1px solid #ffcdd2",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
               }}
               data-ocid="contact.delete_confirm.dialog"
             >
@@ -331,14 +325,14 @@ export function ContactScreen() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-16 rounded-xl animate-pulse"
+                  className="h-16 rounded-2xl animate-pulse"
                   style={{ background: "#e8f5e9" }}
                 />
               ))}
             </div>
           ) : members.length === 0 ? (
             <div
-              className="rounded-xl p-6 text-center"
+              className="rounded-2xl p-6 text-center"
               style={{ background: "#f5f5f5" }}
               data-ocid="contact.members.empty_state"
             >
@@ -352,11 +346,10 @@ export function ContactScreen() {
               {members.map((member, i) => (
                 <div
                   key={String(member.id)}
-                  className="rounded-xl overflow-hidden"
+                  className="rounded-2xl overflow-hidden shadow-sm"
                   style={{
                     background: "white",
                     border: "1px solid #e8f5e9",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                   }}
                   data-ocid={`contact.member.item.${i + 1}`}
                 >
@@ -370,7 +363,7 @@ export function ContactScreen() {
                     <div className="flex-1 min-w-0">
                       <div
                         className="font-bold text-sm truncate"
-                        style={{ color: "#0f4a29" }}
+                        style={{ color: "#0d3d1f" }}
                       >
                         {member.name}
                       </div>

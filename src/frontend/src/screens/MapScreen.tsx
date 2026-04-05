@@ -1,3 +1,5 @@
+import { IslamicHeader } from "../components/IslamicHeader";
+
 export function MapScreen() {
   const lat = 29.8629687;
   const lng = 77.9740235;
@@ -6,31 +8,25 @@ export function MapScreen() {
 
   return (
     <div className="flex flex-col">
-      {/* Header */}
-      <div
-        className="px-4 py-4"
-        style={{
-          background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
-        }}
-      >
-        <div className="text-white font-bold text-base">🗺️ Location / Jagah</div>
-        <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-          Map dekhein aur directions lo
-        </div>
-      </div>
+      {/* Islamic Header */}
+      <IslamicHeader subtitle="🗺️ Location / Jagah" />
 
       <div className="p-4 flex flex-col gap-4">
         {/* Masjid Info */}
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden shadow-md"
           style={{
             background: "white",
             border: "1px solid #e8f5e9",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           }}
         >
-          <div className="px-4 py-3" style={{ background: "#e8f5e9" }}>
-            <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
+          <div
+            className="px-4 py-3"
+            style={{
+              background: "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
+            }}
+          >
+            <div className="font-bold text-sm text-white">
               🕌 Jamia Husainiya Masjid Margoobpur
             </div>
           </div>
@@ -46,10 +42,9 @@ export function MapScreen() {
 
         {/* Map embed */}
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden shadow-md"
           style={{
             border: "1px solid #e8f5e9",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           }}
         >
           <iframe
@@ -68,7 +63,7 @@ export function MapScreen() {
           href={googleMapsUrl}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base"
+          className="flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base shadow-md"
           style={{ background: "#1a6b3a", color: "white" }}
           data-ocid="map.directions.button"
         >
@@ -77,20 +72,19 @@ export function MapScreen() {
 
         {/* How to reach */}
         <div
-          className="rounded-2xl p-4"
+          className="rounded-2xl p-4 shadow-sm"
           style={{
             background: "white",
             border: "1px solid #e8f5e9",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
           }}
         >
-          <div className="font-bold text-sm mb-2" style={{ color: "#0f4a29" }}>
+          <div className="font-bold text-sm mb-2" style={{ color: "#0d3d1f" }}>
             ℹ️ Kaise pahunchein
           </div>
           <div className="text-xs" style={{ color: "#555", lineHeight: 1.7 }}>
             Masjid Margoobpur village mein hai, Haridwar district ke paas.
-            Google Maps mein "Jamia Husainiya Masjid Margoobpur" search karein
-            ya oopar wala button dabayein.
+            Google Maps mein &quot;Jamia Husainiya Masjid Margoobpur&quot;
+            search karein ya oopar wala button dabayein.
           </div>
         </div>
       </div>

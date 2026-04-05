@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { IslamicHeader } from "../components/IslamicHeader";
 import { usePrayerTimes } from "../hooks/useQueries";
 import { isBellRinging, startBell, stopBell } from "../utils/bellAudio";
 import {
@@ -128,7 +129,7 @@ export function NamazScreen() {
     return (
       <div
         key={prayer.name}
-        className="rounded-xl overflow-hidden"
+        className="rounded-2xl overflow-hidden shadow-sm"
         style={{
           background: isJumaHighlight
             ? "#1a6b3a"
@@ -143,13 +144,12 @@ export function NamazScreen() {
             : isCurrent
               ? "2px solid #c9a84c"
               : `1px solid ${isDimmed ? "#e0e0e0" : "#e8f5e9"}`,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
         }}
         data-ocid={`namaz.item.${index + 1}`}
       >
-        <div className="flex items-center px-4 py-3 gap-3">
+        <div className="flex items-center px-4 py-3.5 gap-3">
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+            className="w-11 h-11 rounded-full flex items-center justify-center text-xl flex-shrink-0"
             style={{
               background:
                 isJumaHighlight || isCurrent
@@ -170,7 +170,7 @@ export function NamazScreen() {
                     ? "white"
                     : isDimmed
                       ? "#999"
-                      : "#0f4a29",
+                      : "#0d3d1f",
               }}
             >
               {displayName}
@@ -208,7 +208,7 @@ export function NamazScreen() {
             {isJumaHighlight && (
               <span
                 className="text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: "#c9a84c", color: "#0f4a29" }}
+                style={{ background: "#c9a84c", color: "#0d3d1f" }}
               >
                 आज Juma! 🕌
               </span>
@@ -216,7 +216,7 @@ export function NamazScreen() {
             {isCurrent && (
               <span
                 className="text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: "#c9a84c", color: "#0f4a29" }}
+                style={{ background: "#c9a84c", color: "#0d3d1f" }}
               >
                 Abhi
               </span>
@@ -245,6 +245,20 @@ export function NamazScreen() {
       </div>
     );
   };
+
+  const bellButton = (
+    <button
+      type="button"
+      onClick={() => (bellActive ? handleStopBell() : triggerBell())}
+      className="w-9 h-9 rounded-full flex items-center justify-center text-base"
+      style={{
+        background: bellActive ? "#c9a84c" : "rgba(255,255,255,0.15)",
+      }}
+      data-ocid="namaz.bell.button"
+    >
+      🔔
+    </button>
+  );
 
   return (
     <div className="flex flex-col">
@@ -275,44 +289,22 @@ export function NamazScreen() {
         </div>
       )}
 
-      {/* Screen header */}
-      <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ background: "#1a6b3a" }}
-      >
-        <div>
-          <div className="text-white font-bold text-base">🕌 Namaz Times</div>
-          <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-            Aaj ke namaz ke waqt
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => (bellActive ? handleStopBell() : triggerBell())}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
-          style={{
-            background: bellActive ? "#c9a84c" : "rgba(255,255,255,0.15)",
-          }}
-          data-ocid="namaz.bell.button"
-        >
-          🔔
-        </button>
-      </div>
+      {/* Islamic Header */}
+      <IslamicHeader subtitle="🕌 Namaz Ka Waqt" rightElement={bellButton} />
 
       <div className="p-4 flex flex-col gap-4">
-        {/* ===== Alarm Setup Section ===== */}
+        {/* Alarm Setup Section */}
         <div
-          className="rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden shadow-md"
           style={{
             background: "white",
             border: "1px solid #e8f5e9",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           }}
         >
           <div
             className="px-4 py-3"
             style={{
-              background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
+              background: "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
             }}
           >
             <div className="font-bold text-sm text-white">
@@ -372,16 +364,16 @@ export function NamazScreen() {
           </div>
         </div>
 
-        {/* ===== Prayer Times List ===== */}
+        {/* Prayer Times List */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
+            <div className="font-bold text-sm" style={{ color: "#0d3d1f" }}>
               Namaz ka Waqt
             </div>
             {isFriday && (
               <span
                 className="text-xs font-bold px-2 py-1 rounded-full"
-                style={{ background: "#c9a84c", color: "#0f4a29" }}
+                style={{ background: "#c9a84c", color: "#0d3d1f" }}
               >
                 आज Juma Hai! 🕌
               </span>
@@ -396,7 +388,7 @@ export function NamazScreen() {
               {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
-                  className="h-16 rounded-xl animate-pulse"
+                  className="h-16 rounded-2xl animate-pulse"
                   style={{ background: "#e8f5e9" }}
                 />
               ))}
