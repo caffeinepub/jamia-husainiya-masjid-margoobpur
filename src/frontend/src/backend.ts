@@ -89,10 +89,237 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface Announcement {
+    id: bigint;
+    title: string;
+    body: string;
+    timestamp: Time;
+}
+export interface PrayerTime {
+    name: string;
+    time: string;
+}
+export type Time = bigint;
+export interface CommitteeMember {
+    id: bigint;
+    name: string;
+    role: string;
+    phoneNumber: string;
+}
 export interface backendInterface {
+    addAnnouncement(pin: string, title: string, body: string): Promise<boolean>;
+    addCommitteeMember(pin: string, name: string, role: string, phoneNumber: string): Promise<boolean>;
+    deleteAnnouncement(pin: string, id: bigint): Promise<boolean>;
+    deleteCommitteeMember(pin: string, id: bigint): Promise<boolean>;
+    editAnnouncement(pin: string, id: bigint, title: string, body: string): Promise<boolean>;
+    editCommitteeMember(pin: string, id: bigint, name: string, role: string, phoneNumber: string): Promise<boolean>;
+    getAnnouncements(): Promise<Array<Announcement>>;
+    getAnnouncementsSortedByTime(): Promise<Array<Announcement>>;
+    getCommitteeMembers(): Promise<Array<CommitteeMember>>;
+    getCommitteeMembersSortedByRole(): Promise<Array<CommitteeMember>>;
+    getPrayerTimes(): Promise<Array<PrayerTime>>;
+    getPrayerTimesSorted(): Promise<Array<PrayerTime>>;
+    updateMultiplePrayerTimes(pin: string, times: Array<[string, string]>): Promise<boolean>;
+    updatePrayerTime(pin: string, name: string, time: string): Promise<boolean>;
 }
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
+    async addAnnouncement(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addAnnouncement(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addAnnouncement(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async addCommitteeMember(arg0: string, arg1: string, arg2: string, arg3: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addCommitteeMember(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addCommitteeMember(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async deleteAnnouncement(arg0: string, arg1: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteAnnouncement(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteAnnouncement(arg0, arg1);
+            return result;
+        }
+    }
+    async deleteCommitteeMember(arg0: string, arg1: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteCommitteeMember(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteCommitteeMember(arg0, arg1);
+            return result;
+        }
+    }
+    async editAnnouncement(arg0: string, arg1: bigint, arg2: string, arg3: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.editAnnouncement(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.editAnnouncement(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async editCommitteeMember(arg0: string, arg1: bigint, arg2: string, arg3: string, arg4: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.editCommitteeMember(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.editCommitteeMember(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async getAnnouncements(): Promise<Array<Announcement>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAnnouncements();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAnnouncements();
+            return result;
+        }
+    }
+    async getAnnouncementsSortedByTime(): Promise<Array<Announcement>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAnnouncementsSortedByTime();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAnnouncementsSortedByTime();
+            return result;
+        }
+    }
+    async getCommitteeMembers(): Promise<Array<CommitteeMember>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCommitteeMembers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCommitteeMembers();
+            return result;
+        }
+    }
+    async getCommitteeMembersSortedByRole(): Promise<Array<CommitteeMember>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCommitteeMembersSortedByRole();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCommitteeMembersSortedByRole();
+            return result;
+        }
+    }
+    async getPrayerTimes(): Promise<Array<PrayerTime>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPrayerTimes();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPrayerTimes();
+            return result;
+        }
+    }
+    async getPrayerTimesSorted(): Promise<Array<PrayerTime>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPrayerTimesSorted();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPrayerTimesSorted();
+            return result;
+        }
+    }
+    async updateMultiplePrayerTimes(arg0: string, arg1: Array<[string, string]>): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateMultiplePrayerTimes(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateMultiplePrayerTimes(arg0, arg1);
+            return result;
+        }
+    }
+    async updatePrayerTime(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePrayerTime(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePrayerTime(arg0, arg1, arg2);
+            return result;
+        }
+    }
 }
 export interface CreateActorOptions {
     agent?: Agent;

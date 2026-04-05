@@ -15,22 +15,23 @@ export function MapScreen() {
 
       {/* Map embed */}
       <div className="bg-white rounded-2xl shadow-card overflow-hidden mb-4">
-        <div className="relative" style={{ height: "340px" }}>
+        <div style={{ height: "340px" }}>
           <iframe
-            src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d500!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjnCsDUxJzQ2LjciTiA3N8KwNTgnMjYuNSJF!5e0!3m2!1sen!2sin!4v1234567890`}
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=77.9730235,29.8619687,77.9750235,29.8639687&layer=mapnik&marker=${lat},${lng}`}
             width="100%"
             height="340"
-            style={{ border: "0" }}
-            allowFullScreen
+            style={{ border: "0", display: "block" }}
             loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
             title="जामिया हुसैनिया मस्जिद मरगूबपुर की स्थिति"
           />
         </div>
       </div>
 
       {/* Address card */}
-      <div className="bg-white rounded-2xl p-4 shadow-card mb-4">
+      <div
+        className="bg-white rounded-2xl p-4 shadow-card mb-4"
+        data-ocid="map.address.card"
+      >
         <div className="flex items-start gap-3">
           <span className="text-xl mt-0.5">📍</span>
           <div>
@@ -51,8 +52,9 @@ export function MapScreen() {
         href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-semibold text-sm"
+        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-semibold text-sm shadow"
         style={{ background: "#1a6b3c" }}
+        data-ocid="map.directions.button"
       >
         🗺️ Google Maps पर Directions लें
       </a>

@@ -1,57 +1,77 @@
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import type { Notice } from "../data/notices";
-import type { Prayer } from "../data/prayers";
-import { PRAYERS } from "../data/prayers";
+import type { Announcement, CommitteeMember, PrayerTime } from "../backend.d";
+import {
+  useAddAnnouncement,
+  useAddCommitteeMember,
+  useAnnouncements,
+  useCommitteeMembers,
+  useDeleteAnnouncement,
+  useDeleteCommitteeMember,
+  usePrayerTimes,
+  useUpdatePrayerTimes,
+} from "../hooks/useQueries";
 
 const ADMIN_PIN = "786";
-const NOTICES_KEY = "masjid_notices";
-const PRAYER_TIMES_KEY = "masjid_prayer_times";
 const AUTH_KEY = "masjid_admin_authed";
 
-function loadNotices(): Notice[] {
+const PRAYER_META: Record<
+  string,
+  { hindi: string; arabic: string; icon: string; isSpecial?: boolean }
+> = {
+  fajr: { hindi: "फ़ज्र", arabic: "الفَجْر", icon: "🌙" },
+  zohar: { hindi: "ज़ोहर", arabic: "الظُّهْر", icon: "🌅" },
+  asr: { hindi: "अस्र", arabic: "العَصْر", icon: "☀️" },
+  maghrib: { hindi: "मग़रिब", arabic: "المَغْرِب", icon: "🌇" },
+  isha: { hindi: "इशा", arabic: "العِشَاء", icon: "🌃" },
+  khutba_juma: {
+    hindi: "ख़ुत्बा जुमा",
+    arabic: "خُطْبَةُ الجُمُعَة",
+    icon: "🕌",
+    isSpecial: true,
+  },
+};
+
+const PRAYER_ORDER = ["fajr", "zohar", "asr", "maghrib", "isha", "khutba_juma"];
+
+function formatTimestamp(ts: bigint): string {
   try {
-    const s = localStorage.getItem(NOTICES_KEY);
-    if (s) return JSON.parse(s) as Notice[];
-  } catch {}
-  return [];
-}
-
-function saveNotices(list: Notice[]) {
-  localStorage.setItem(NOTICES_KEY, JSON.stringify(list));
-}
-
-type PrayerTimes = Record<string, string>;
-
-function loadPrayerTimes(): PrayerTimes {
-  try {
-    const s = localStorage.getItem(PRAYER_TIMES_KEY);
-    if (s) return JSON.parse(s) as PrayerTimes;
-  } catch {}
-  const defaults: PrayerTimes = {};
-  for (const p of PRAYERS) {
-    const hh = String(p.hour).padStart(2, "0");
-    const mm = String(p.minute).padStart(2, "0");
-    defaults[p.id] = `${hh}:${mm}`;
+    const ms = Number(ts / 1_000_000n);
+    return new Date(ms).toLocaleDateString("hi-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return "";
   }
-  return defaults;
 }
 
-function savePrayerTimes(times: PrayerTimes) {
-  localStorage.setItem(PRAYER_TIMES_KEY, JSON.stringify(times));
+function to24h(timeStr: string): string {
+  // If already HH:MM return as is
+  if (/^\d{1,2}:\d{2}$/.test(timeStr)) return timeStr;
+  // Parse 12h
+  const m = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+  if (!m) return timeStr;
+  let h = Number.parseInt(m[1], 10);
+  const min = m[2];
+  const meridiem = m[3].toUpperCase();
+  if (meridiem === "PM" && h !== 12) h += 12;
+  if (meridiem === "AM" && h === 12) h = 0;
+  return `${String(h).padStart(2, "0")}:${min}`;
 }
 
-function to12h(t: string): string {
-  const [hStr, mStr] = t.split(":");
+function to12h(timeStr: string): string {
+  const [hStr, mStr] = timeStr.split(":");
   let h = Number.parseInt(hStr, 10);
-  const m = mStr;
+  const m = mStr ?? "00";
   const suffix = h >= 12 ? "PM" : "AM";
   if (h > 12) h -= 12;
   if (h === 0) h = 12;
   return `${h}:${m} ${suffix}`;
 }
 
-type AdminTab = "notices" | "prayers";
-
+// ---------- Login Screen ----------
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
@@ -61,7 +81,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
       sessionStorage.setItem(AUTH_KEY, "1");
       onLogin();
     } else {
-      setError("गलत PIN है।");
+      setError("गलत PIN है। दोबारा कोशिश करें।");
       setPin("");
     }
   }
@@ -69,7 +89,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   return (
     <div
       className="px-4 py-5 flex flex-col items-center"
-      data-ocid="admin.page"
+      data-ocid="admin.login.page"
     >
       <div
         className="rounded-2xl p-6 mb-6 text-center relative overflow-hidden w-full"
@@ -82,7 +102,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           <svg role="img" aria-label="decorative" width="100%" height="100%">
             <defs>
               <pattern
-                id="geo4"
+                id="apat"
                 x="0"
                 y="0"
                 width="30"
@@ -96,7 +116,7 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#geo4)" />
+            <rect width="100%" height="100%" fill="url(#apat)" />
           </svg>
         </div>
         <div className="relative">
@@ -148,17 +168,146 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-function NoticesManager() {
-  const [notices, setNotices] = useState<Notice[]>(loadNotices);
+// ---------- Prayer Times Manager ----------
+function PrayerTimesManager() {
+  const { data: prayerTimes, isLoading } = usePrayerTimes();
+  const updateTimes = useUpdatePrayerTimes();
+
+  // Build local edit state from backend data
+  const [localTimes, setLocalTimes] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState(false);
+
+  // Merge backend data into localTimes on first load
+  function getTimeValue(id: string): string {
+    if (localTimes[id] !== undefined) return localTimes[id];
+    if (!prayerTimes) return "";
+    const found = (prayerTimes as PrayerTime[]).find(
+      (p) => p.name.toLowerCase().replace(/ /g, "_") === id,
+    );
+    return found ? to24h(found.time) : "";
+  }
+
+  function handleChange(id: string, val: string) {
+    setLocalTimes((prev) => ({ ...prev, [id]: val }));
+    setSaved(false);
+  }
+
+  function handleSave() {
+    const pairs: Array<[string, string]> = PRAYER_ORDER.map((id) => [
+      id,
+      getTimeValue(id),
+    ]);
+    updateTimes.mutate(pairs, {
+      onSuccess: () => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      },
+    });
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        className="py-8 text-center text-sm text-gray-400"
+        data-ocid="admin.prayers.loading_state"
+      >
+        लोड हो रहा है...
+      </div>
+    );
+  }
+
+  return (
+    <div data-ocid="admin.prayers.panel">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-base" style={{ color: "#1a6b3c" }}>
+          नमाज़ के वक़्त
+        </h3>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={updateTimes.isPending}
+          className="text-xs font-bold px-4 py-1.5 rounded-full text-white flex items-center gap-1.5"
+          style={{ background: saved ? "#25a85a" : "#1a6b3c" }}
+          data-ocid="admin.prayers.save_button"
+        >
+          {updateTimes.isPending && (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          )}
+          {saved
+            ? "✓ सेव हो गया!"
+            : updateTimes.isPending
+              ? "सेव हो रहा है..."
+              : "सेव करें"}
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {PRAYER_ORDER.map((id, i) => {
+          const meta = PRAYER_META[id];
+          const val = getTimeValue(id);
+          return (
+            <div
+              key={id}
+              className="bg-white rounded-2xl p-4 shadow-card flex items-center gap-3"
+              data-ocid={`admin.prayer.item.${i + 1}`}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                style={{ background: "#e8f5ee" }}
+              >
+                {meta?.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-xs"
+                  style={{ color: "#888", fontFamily: "serif" }}
+                >
+                  {meta?.arabic}
+                </p>
+                <p className="font-bold text-sm" style={{ color: "#1a6b3c" }}>
+                  {meta?.hindi}
+                </p>
+                {meta?.isSpecial && (
+                  <span
+                    className="inline-block text-xs px-2 py-0.5 rounded-full font-bold mt-0.5"
+                    style={{ background: "#c9a84c", color: "#3b2000" }}
+                  >
+                    सिर्फ़ जुमा
+                  </span>
+                )}
+              </div>
+              <div className="text-right">
+                {val && (
+                  <p className="text-xs text-gray-400 mb-1">{to12h(val)}</p>
+                )}
+                <input
+                  type="time"
+                  value={val}
+                  onChange={(e) => handleChange(id, e.target.value)}
+                  className="border rounded-lg px-2 py-1 text-sm outline-none"
+                  style={{ borderColor: "#c8e6d4", color: "#1a6b3c" }}
+                  data-ocid={`admin.prayer.time.input.${i + 1}`}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-gray-400 mt-4 text-center">
+        बदलाव तुरंत नमाज़ स्क्रीन पर दिखेंगे।
+      </p>
+    </div>
+  );
+}
+
+// ---------- Announcements Manager ----------
+function AnnouncementsManager() {
+  const { data: announcements, isLoading } = useAnnouncements();
+  const addAnn = useAddAnnouncement();
+  const deleteAnn = useDeleteAnnouncement();
+
   const [showForm, setShowForm] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    date: today,
-    category: "",
-    important: false,
-  });
+  const [form, setForm] = useState({ title: "", body: "" });
   const [formError, setFormError] = useState("");
 
   function handleAdd() {
@@ -166,32 +315,17 @@ function NoticesManager() {
       setFormError("शीर्षक ज़रूरी है।");
       return;
     }
-    const newNotice: Notice = {
-      id: Date.now().toString(),
-      title: form.title.trim(),
-      description: form.description.trim(),
-      date: form.date,
-      category: form.category.trim(),
-      important: form.important,
-    };
-    const updated = [newNotice, ...notices];
-    setNotices(updated);
-    saveNotices(updated);
-    setForm({
-      title: "",
-      description: "",
-      date: today,
-      category: "",
-      important: false,
-    });
-    setFormError("");
-    setShowForm(false);
-  }
-
-  function handleDelete(id: string) {
-    const updated = notices.filter((n) => n.id !== id);
-    setNotices(updated);
-    saveNotices(updated);
+    addAnn.mutate(
+      { title: form.title.trim(), body: form.body.trim() },
+      {
+        onSuccess: () => {
+          setForm({ title: "", body: "" });
+          setFormError("");
+          setShowForm(false);
+        },
+        onError: () => setFormError("जोड़ने में समस्या हुई।"),
+      },
+    );
   }
 
   return (
@@ -232,104 +366,75 @@ function NoticesManager() {
               data-ocid="admin.notice.title.input"
             />
             <textarea
-              placeholder="विवरण"
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
+              placeholder="सूचना का विवरण"
+              value={form.body}
+              onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
               rows={3}
               className="w-full border rounded-xl px-3 py-2 text-sm outline-none resize-none"
               style={{ borderColor: "#c8e6d4" }}
-              data-ocid="admin.notice.description.textarea"
+              data-ocid="admin.notice.body.textarea"
             />
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-              className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
-              style={{ borderColor: "#c8e6d4" }}
-              data-ocid="admin.notice.date.input"
-            />
-            <input
-              type="text"
-              placeholder="श्रेणी (जैसे: कार्यक्रम, एलान)"
-              value={form.category}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, category: e.target.value }))
-              }
-              className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
-              style={{ borderColor: "#c8e6d4" }}
-              data-ocid="admin.notice.category.input"
-            />
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.important}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, important: e.target.checked }))
-                }
-                className="w-4 h-4 accent-green-700"
-                data-ocid="admin.notice.important.checkbox"
-              />
-              <span className="text-sm text-gray-600">ज़रूरी सूचना</span>
-            </label>
-            {formError && <p className="text-xs text-red-500">{formError}</p>}
+            {formError && (
+              <p
+                className="text-xs text-red-500"
+                data-ocid="admin.notice.error_state"
+              >
+                {formError}
+              </p>
+            )}
             <button
               type="button"
               onClick={handleAdd}
-              className="w-full rounded-xl py-2 text-sm font-bold text-white"
+              disabled={addAnn.isPending}
+              className="w-full rounded-xl py-2 text-sm font-bold text-white flex items-center justify-center gap-2"
               style={{ background: "#1a6b3c" }}
               data-ocid="admin.notice.submit_button"
             >
-              सूचना सेव करें
+              {addAnn.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {addAnn.isPending ? "जोड़ा जा रहा है..." : "सूचना सेव करें"}
             </button>
           </div>
         </div>
       )}
 
-      {notices.length === 0 ? (
+      {isLoading ? (
+        <div
+          className="py-6 text-center text-sm text-gray-400"
+          data-ocid="admin.notices.loading_state"
+        >
+          लोड हो रहा है...
+        </div>
+      ) : !announcements || announcements.length === 0 ? (
         <div
           className="bg-white rounded-2xl p-6 text-center text-sm text-gray-400"
           data-ocid="admin.notices.empty_state"
         >
-          कोई सूचना नहीं है। &quot;+ सूचना जोड़ें&quot; दबाकर जोड़ें।
+          कोई सूचना नहीं है।
         </div>
       ) : (
         <div className="space-y-3">
-          {notices.map((notice, i) => (
+          {(announcements as Announcement[]).map((ann, i) => (
             <div
-              key={notice.id}
+              key={String(ann.id)}
               className="bg-white rounded-2xl p-4 shadow-card"
               data-ocid={`admin.notice.item.${i + 1}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-sm text-gray-800">
-                      {notice.title}
-                    </p>
-                    {notice.important && (
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full font-bold"
-                        style={{ background: "#fff0f0", color: "#c0392b" }}
-                      >
-                        ज़रूरी
-                      </span>
-                    )}
-                  </div>
+                  <p className="font-bold text-sm text-gray-800">{ann.title}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {notice.date}
-                    {notice.category ? ` · ${notice.category}` : ""}
+                    {formatTimestamp(ann.timestamp)}
                   </p>
-                  {notice.description && (
+                  {ann.body && (
                     <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                      {notice.description}
+                      {ann.body}
                     </p>
                   )}
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleDelete(notice.id)}
+                  onClick={() => deleteAnn.mutate(ann.id)}
+                  disabled={deleteAnn.isPending}
                   className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded-full flex-shrink-0"
                   aria-label="सूचना हटाएं"
                   data-ocid={`admin.notice.delete_button.${i + 1}`}
@@ -345,112 +450,171 @@ function NoticesManager() {
   );
 }
 
-function PrayerTimesManager() {
-  const [times, setTimes] = useState<PrayerTimes>(loadPrayerTimes);
-  const [saved, setSaved] = useState(false);
+// ---------- Committee Manager ----------
+function CommitteeManager() {
+  const { data: members, isLoading } = useCommitteeMembers();
+  const addMember = useAddCommitteeMember();
+  const deleteMember = useDeleteCommitteeMember();
 
-  function handleChange(id: string, value: string) {
-    setTimes((prev) => ({ ...prev, [id]: value }));
-    setSaved(false);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: "", role: "", phoneNumber: "" });
+  const [formError, setFormError] = useState("");
+
+  function handleAdd() {
+    if (!form.name.trim() || !form.phoneNumber.trim()) {
+      setFormError("नाम और फ़ोन नंबर ज़रूरी है।");
+      return;
+    }
+    addMember.mutate(
+      {
+        name: form.name.trim(),
+        role: form.role.trim(),
+        phoneNumber: form.phoneNumber.trim(),
+      },
+      {
+        onSuccess: () => {
+          setForm({ name: "", role: "", phoneNumber: "" });
+          setFormError("");
+          setShowForm(false);
+        },
+        onError: () => setFormError("जोड़ने में समस्या हुई।"),
+      },
+    );
   }
-
-  function handleSave() {
-    savePrayerTimes(times);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  const prayerLabels: Record<
-    string,
-    { arabic: string; hindi: string; icon: string; isSpecial?: boolean }
-  > = {
-    fajr: { arabic: "الفَجْر", hindi: "फ़जर", icon: "🌙" },
-    khutba_juma: {
-      arabic: "خُطْبَةُ الجُمُعَة",
-      hindi: "ख़ुत्बा जुमा",
-      icon: "🕌",
-      isSpecial: true,
-    },
-    zohar: { arabic: "الظُّهْر", hindi: "ज़ोहर", icon: "🌅" },
-    asr: { arabic: "العَصْر", hindi: "अस्र", icon: "☀️" },
-    maghrib: { arabic: "المَغْرِب", hindi: "मग़रिब", icon: "🌇" },
-    isha: { arabic: "العِشَاء", hindi: "इशा", icon: "🌃" },
-  };
 
   return (
-    <div data-ocid="admin.prayers.panel">
+    <div data-ocid="admin.committee.panel">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-base" style={{ color: "#1a6b3c" }}>
-          नमाज़ के वक़्त
+          कमेटी सदस्य
         </h3>
         <button
           type="button"
-          onClick={handleSave}
-          className="text-xs font-bold px-4 py-1.5 rounded-full text-white"
-          style={{ background: saved ? "#25a85a" : "#1a6b3c" }}
-          data-ocid="admin.prayers.save_button"
+          onClick={() => {
+            setShowForm((v) => !v);
+            setFormError("");
+          }}
+          className="text-xs font-bold px-3 py-1.5 rounded-full text-white"
+          style={{ background: "#1a6b3c" }}
+          data-ocid="admin.committee.open_modal_button"
         >
-          {saved ? "✓ सेव हो गया!" : "सेव करें"}
+          {showForm ? "✕ रद्द करें" : "+ सदस्य जोड़ें"}
         </button>
       </div>
 
-      <div className="space-y-3">
-        {PRAYERS.map((p: Prayer, i: number) => {
-          const label = prayerLabels[p.id];
-          const val = times[p.id] || "";
-          return (
+      {showForm && (
+        <div
+          className="bg-white rounded-2xl p-4 shadow-card mb-4"
+          data-ocid="admin.committee.modal"
+        >
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              placeholder="नाम *"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
+              style={{ borderColor: "#c8e6d4" }}
+              data-ocid="admin.committee.name.input"
+            />
+            <input
+              type="text"
+              placeholder="पद (जैसे: इमाम, सेक्रेटरी)"
+              value={form.role}
+              onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+              className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
+              style={{ borderColor: "#c8e6d4" }}
+              data-ocid="admin.committee.role.input"
+            />
+            <input
+              type="tel"
+              placeholder="फ़ोन नंबर *"
+              value={form.phoneNumber}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, phoneNumber: e.target.value }))
+              }
+              className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
+              style={{ borderColor: "#c8e6d4" }}
+              data-ocid="admin.committee.phone.input"
+            />
+            {formError && (
+              <p
+                className="text-xs text-red-500"
+                data-ocid="admin.committee.error_state"
+              >
+                {formError}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={addMember.isPending}
+              className="w-full rounded-xl py-2 text-sm font-bold text-white flex items-center justify-center gap-2"
+              style={{ background: "#1a6b3c" }}
+              data-ocid="admin.committee.submit_button"
+            >
+              {addMember.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              {addMember.isPending ? "जोड़ा जा रहा है..." : "सदस्य सेव करें"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div
+          className="py-6 text-center text-sm text-gray-400"
+          data-ocid="admin.committee.loading_state"
+        >
+          लोड हो रहा है...
+        </div>
+      ) : !members || members.length === 0 ? (
+        <div
+          className="bg-white rounded-2xl p-6 text-center text-sm text-gray-400"
+          data-ocid="admin.committee.empty_state"
+        >
+          कोई सदस्य नहीं है।
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {(members as CommitteeMember[]).map((m, i) => (
             <div
-              key={p.id}
+              key={String(m.id)}
               className="bg-white rounded-2xl p-4 shadow-card flex items-center gap-3"
-              data-ocid={`admin.prayer.item.${i + 1}`}
+              data-ocid={`admin.committee.item.${i + 1}`}
             >
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: "#e8f5ee" }}
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white flex-shrink-0"
+                style={{ background: "#1a6b3c" }}
               >
-                {label.icon}
+                {m.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p
-                  className="text-xs"
-                  style={{ color: "#888", fontFamily: "serif" }}
-                >
-                  {label.arabic}
-                </p>
-                <p className="font-bold text-sm" style={{ color: "#1a6b3c" }}>
-                  {label.hindi}
-                </p>
-                {label.isSpecial && (
-                  <span
-                    className="inline-block text-xs px-2 py-0.5 rounded-full font-bold mt-0.5"
-                    style={{ background: "#c9a84c", color: "#3b2000" }}
-                  >
-                    सिर्फ़ जुमा
-                  </span>
-                )}
+                <p className="font-bold text-sm text-gray-800">{m.name}</p>
+                {m.role && <p className="text-xs text-gray-500">{m.role}</p>}
+                <p className="text-xs text-gray-400">{m.phoneNumber}</p>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-400 mb-1">{to12h(val)}</p>
-                <input
-                  type="time"
-                  value={val}
-                  onChange={(e) => handleChange(p.id, e.target.value)}
-                  className="border rounded-lg px-2 py-1 text-sm outline-none"
-                  style={{ borderColor: "#c8e6d4", color: "#1a6b3c" }}
-                  data-ocid={`admin.prayer.time.input.${i + 1}`}
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => deleteMember.mutate(m.id)}
+                disabled={deleteMember.isPending}
+                className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded-full flex-shrink-0"
+                aria-label="हटाएं"
+                data-ocid={`admin.committee.delete_button.${i + 1}`}
+              >
+                🗑
+              </button>
             </div>
-          );
-        })}
-      </div>
-
-      <p className="text-xs text-gray-400 mt-4 text-center">
-        बदलाव तुरंत नमाज़ स्क्रीन पर दिखेंगे।
-      </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+// ---------- Main Admin Panel ----------
+type AdminTab = "prayers" | "notices" | "committee";
 
 export function AdminScreen() {
   const [authed, setAuthed] = useState(
@@ -461,6 +625,12 @@ export function AdminScreen() {
   if (!authed) {
     return <LoginScreen onLogin={() => setAuthed(true)} />;
   }
+
+  const tabs: { id: AdminTab; label: string }[] = [
+    { id: "notices", label: "📢 सूचनाएं" },
+    { id: "prayers", label: "🕌 नमाज़" },
+    { id: "committee", label: "👥 कमेटी" },
+  ];
 
   return (
     <div className="px-4 py-5" data-ocid="admin.page">
@@ -491,26 +661,26 @@ export function AdminScreen() {
         style={{ background: "#e8f5ee" }}
         data-ocid="admin.tab"
       >
-        {(["notices", "prayers"] as AdminTab[]).map((t) => (
+        {tabs.map((t) => (
           <button
-            key={t}
+            key={t.id}
             type="button"
-            onClick={() => setTab(t)}
-            className="flex-1 py-2.5 text-sm font-bold transition-all"
+            onClick={() => setTab(t.id)}
+            className="flex-1 py-2.5 text-xs font-bold transition-all"
             style={{
-              background: tab === t ? "#1a6b3c" : "transparent",
-              color: tab === t ? "white" : "#1a6b3c",
-              borderRadius: "inherit",
+              background: tab === t.id ? "#1a6b3c" : "transparent",
+              color: tab === t.id ? "white" : "#1a6b3c",
             }}
-            data-ocid={`admin.${t}.tab`}
+            data-ocid={`admin.${t.id}.tab`}
           >
-            {t === "notices" ? "📢 सूचनाएं" : "🕌 नमाज़ के वक़्त"}
+            {t.label}
           </button>
         ))}
       </div>
 
-      {tab === "notices" && <NoticesManager />}
+      {tab === "notices" && <AnnouncementsManager />}
       {tab === "prayers" && <PrayerTimesManager />}
+      {tab === "committee" && <CommitteeManager />}
     </div>
   );
 }

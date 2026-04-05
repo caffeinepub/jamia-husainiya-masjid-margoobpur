@@ -1,50 +1,41 @@
-import { useEffect, useState } from "react";
-import type { CommitteeMember } from "../data/contacts";
-
-const STORAGE_KEY = "masjid_committee";
-
-function loadCommittee(): CommitteeMember[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved) as CommitteeMember[];
-  } catch {}
-  return [];
-}
-
-function saveCommittee(list: CommitteeMember[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import type { CommitteeMember } from "../backend.d";
+import {
+  useAddCommitteeMember,
+  useCommitteeMembers,
+  useDeleteCommitteeMember,
+} from "../hooks/useQueries";
 
 export function ContactScreen() {
-  const [committee, setCommittee] = useState<CommitteeMember[]>(loadCommittee);
+  const { data: members, isLoading } = useCommitteeMembers();
+  const addMember = useAddCommitteeMember();
+  const deleteMember = useDeleteCommitteeMember();
+
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", role: "", phone: "" });
+  const [form, setForm] = useState({ name: "", role: "", phoneNumber: "" });
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    saveCommittee(committee);
-  }, [committee]);
-
   function handleAdd() {
-    if (!form.name.trim() || !form.phone.trim()) {
-      setError("नाम और फोन नंबर ज़रूरी है।");
+    if (!form.name.trim() || !form.phoneNumber.trim()) {
+      setError("नाम और फ़ोन नंबर ज़रूरी है।");
       return;
     }
-    setCommittee((prev) => [
-      ...prev,
+    addMember.mutate(
       {
         name: form.name.trim(),
         role: form.role.trim(),
-        phone: form.phone.trim(),
+        phoneNumber: form.phoneNumber.trim(),
       },
-    ]);
-    setForm({ name: "", role: "", phone: "" });
-    setError("");
-    setShowForm(false);
-  }
-
-  function handleDelete(index: number) {
-    setCommittee((prev) => prev.filter((_, i) => i !== index));
+      {
+        onSuccess: () => {
+          setForm({ name: "", role: "", phoneNumber: "" });
+          setError("");
+          setShowForm(false);
+        },
+        onError: () => setError("सेव करने में समस्या हुई। दोबारा कोशिश करें।"),
+      },
+    );
   }
 
   return (
@@ -67,15 +58,10 @@ export function ContactScreen() {
           className="absolute inset-0 opacity-10 pointer-events-none"
           aria-hidden="true"
         >
-          <svg
-            role="img"
-            aria-label="decorative pattern"
-            width="100%"
-            height="100%"
-          >
+          <svg role="img" aria-label="decorative" width="100%" height="100%">
             <defs>
               <pattern
-                id="geo2"
+                id="cpat"
                 x="0"
                 y="0"
                 width="30"
@@ -89,7 +75,7 @@ export function ContactScreen() {
                 />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#geo2)" />
+            <rect width="100%" height="100%" fill="url(#cpat)" />
           </svg>
         </div>
         <div className="relative flex items-center gap-3">
@@ -103,7 +89,7 @@ export function ContactScreen() {
         </div>
       </div>
 
-      {/* Address card */}
+      {/* Address */}
       <div
         className="bg-white rounded-2xl p-4 shadow-card mb-4"
         data-ocid="contact.address.card"
@@ -124,7 +110,7 @@ export function ContactScreen() {
       </div>
 
       {/* Action buttons */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-5">
         <a
           href="tel:+918958999299"
           className="flex items-center justify-center gap-2 rounded-2xl p-4 font-bold text-sm text-white shadow-card"
@@ -147,7 +133,7 @@ export function ContactScreen() {
         </a>
       </div>
 
-      {/* Committee contacts */}
+      {/* Committee */}
       <div className="bg-white rounded-2xl shadow-card overflow-hidden mb-4">
         <div
           className="px-4 py-3 border-b flex items-center justify-between"
@@ -164,27 +150,29 @@ export function ContactScreen() {
             }}
             className="text-xs font-bold px-3 py-1.5 rounded-full text-white"
             style={{ background: "#1a6b3c" }}
+            data-ocid="contact.committee.open_modal_button"
           >
             {showForm ? "✕ रद्द करें" : "+ जोड़ें"}
           </button>
         </div>
 
-        {/* Add form */}
         {showForm && (
           <div
             className="px-4 py-4 border-b"
             style={{ borderColor: "#e8f5ee", background: "#f7fbf8" }}
+            data-ocid="contact.committee.modal"
           >
             <div className="flex flex-col gap-2">
               <input
                 type="text"
-                placeholder="नाम (Name) *"
+                placeholder="नाम *"
                 value={form.name}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, name: e.target.value }))
                 }
                 className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
                 style={{ borderColor: "#c8e6d4" }}
+                data-ocid="contact.committee.name.input"
               />
               <input
                 type="text"
@@ -195,42 +183,66 @@ export function ContactScreen() {
                 }
                 className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
                 style={{ borderColor: "#c8e6d4" }}
+                data-ocid="contact.committee.role.input"
               />
               <input
                 type="tel"
-                placeholder="फोन नंबर *"
-                value={form.phone}
+                placeholder="फ़ोन नंबर *"
+                value={form.phoneNumber}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, phone: e.target.value }))
+                  setForm((f) => ({ ...f, phoneNumber: e.target.value }))
                 }
                 className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
                 style={{ borderColor: "#c8e6d4" }}
+                data-ocid="contact.committee.phone.input"
               />
-              {error && <p className="text-xs text-red-500">{error}</p>}
+              {error && (
+                <p
+                  className="text-xs text-red-500"
+                  data-ocid="contact.committee.error_state"
+                >
+                  {error}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={handleAdd}
-                className="w-full rounded-xl py-2 text-sm font-bold text-white"
+                disabled={addMember.isPending}
+                className="w-full rounded-xl py-2 text-sm font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: "#1a6b3c" }}
+                data-ocid="contact.committee.submit_button"
               >
-                सेव करें
+                {addMember.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {addMember.isPending ? "सेव हो रहा है..." : "सेव करें"}
               </button>
             </div>
           </div>
         )}
 
-        {committee.length === 0 && !showForm ? (
-          <div className="px-4 py-6 text-center text-sm text-gray-400">
-            कोई member नहीं है। &quot;+ जोड़ें&quot; दबाकर जोड़ें।
+        {isLoading ? (
+          <div
+            className="px-4 py-6 text-center text-sm text-gray-400"
+            data-ocid="contact.committee.loading_state"
+          >
+            लोड हो रहा है...
+          </div>
+        ) : !members || members.length === 0 ? (
+          <div
+            className="px-4 py-6 text-center text-sm text-gray-400"
+            data-ocid="contact.committee.empty_state"
+          >
+            कोई सदस्य नहीं जोड़ा गया।
           </div>
         ) : (
-          committee.map((member, index) => (
+          (members as CommitteeMember[]).map((member, index) => (
             <div
-              key={`${member.name}-${index}`}
+              key={String(member.id)}
               className="flex items-center justify-between px-4 py-3"
               style={{
                 borderBottom:
-                  index < committee.length - 1 ? "1px solid #f0f7f0" : "none",
+                  index < members.length - 1 ? "1px solid #f0f7f0" : "none",
               }}
               data-ocid={`contact.committee.item.${index + 1}`}
             >
@@ -244,17 +256,20 @@ export function ContactScreen() {
               </div>
               <div className="flex items-center gap-2 ml-2">
                 <a
-                  href={`tel:${member.phone}`}
+                  href={`tel:${member.phoneNumber}`}
                   className="text-xs font-semibold px-3 py-1.5 rounded-full"
                   style={{ background: "#e8f5ee", color: "#1a6b3c" }}
+                  data-ocid={`contact.committee.call.button.${index + 1}`}
                 >
-                  {member.phone}
+                  {member.phoneNumber}
                 </a>
                 <button
                   type="button"
-                  onClick={() => handleDelete(index)}
+                  onClick={() => deleteMember.mutate(member.id)}
+                  disabled={deleteMember.isPending}
                   className="text-xs text-red-400 hover:text-red-600 px-1 py-1 rounded-full"
                   aria-label="हटाएं"
+                  data-ocid={`contact.committee.delete_button.${index + 1}`}
                 >
                   ✕
                 </button>

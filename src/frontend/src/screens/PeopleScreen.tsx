@@ -1,31 +1,8 @@
-import { useEffect, useState } from "react";
-import type { CommitteeMember } from "../data/contacts";
-
-const STORAGE_KEY = "masjid_committee";
-
-function loadCommittee(): CommitteeMember[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved) as CommitteeMember[];
-  } catch {}
-  return [];
-}
+import type { CommitteeMember } from "../backend.d";
+import { useCommitteeMembers } from "../hooks/useQueries";
 
 export function PeopleScreen() {
-  const [committee, setCommittee] = useState<CommitteeMember[]>(loadCommittee);
-
-  useEffect(() => {
-    function onStorage(e: StorageEvent) {
-      if (e.key === STORAGE_KEY) setCommittee(loadCommittee());
-    }
-    window.addEventListener("storage", onStorage);
-    const onFocus = () => setCommittee(loadCommittee());
-    window.addEventListener("focus", onFocus);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, []);
+  const { data: members, isLoading } = useCommitteeMembers();
 
   return (
     <div className="px-4 py-5" data-ocid="people.page">
@@ -41,7 +18,7 @@ export function PeopleScreen() {
         </p>
       </div>
 
-      {/* Decorative banner */}
+      {/* Banner */}
       <div
         className="rounded-2xl p-4 mb-5 text-center relative overflow-hidden"
         style={{ background: "#1a6b3c" }}
@@ -53,7 +30,7 @@ export function PeopleScreen() {
           <svg role="img" aria-label="decorative" width="100%" height="100%">
             <defs>
               <pattern
-                id="geo3"
+                id="ppat"
                 x="0"
                 y="0"
                 width="30"
@@ -67,7 +44,7 @@ export function PeopleScreen() {
                 />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#geo3)" />
+            <rect width="100%" height="100%" fill="url(#ppat)" />
           </svg>
         </div>
         <p className="text-white font-bold text-base relative">👥 कमेटी सदस्य</p>
@@ -76,7 +53,17 @@ export function PeopleScreen() {
         </p>
       </div>
 
-      {committee.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-3" data-ocid="people.loading_state">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl p-4 shadow-card animate-pulse"
+              style={{ background: "#e8f5ee", height: "80px" }}
+            />
+          ))}
+        </div>
+      ) : !members || members.length === 0 ? (
         <div
           className="bg-white rounded-2xl p-8 text-center shadow-card"
           data-ocid="people.empty_state"
@@ -91,9 +78,9 @@ export function PeopleScreen() {
         </div>
       ) : (
         <div className="space-y-3" data-ocid="people.list">
-          {committee.map((member, index) => (
+          {(members as CommitteeMember[]).map((member, index) => (
             <div
-              key={`${member.name}-${index}`}
+              key={String(member.id)}
               className="bg-white rounded-2xl p-4 shadow-card flex items-center gap-4"
               data-ocid={`people.item.${index + 1}`}
             >
@@ -115,26 +102,12 @@ export function PeopleScreen() {
                 )}
               </div>
               <a
-                href={`tel:${member.phone}`}
+                href={`tel:${member.phoneNumber}`}
                 className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full"
                 style={{ background: "#e8f5ee", color: "#1a6b3c" }}
                 data-ocid={`people.call.button.${index + 1}`}
               >
-                <svg
-                  role="img"
-                  aria-label="कॉल करें"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.4 12.07a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.51 1.4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.01a16 16 0 0 0 6.05 6.05l1.87-1.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-                {member.phone}
+                📞 {member.phoneNumber}
               </a>
             </div>
           ))}
