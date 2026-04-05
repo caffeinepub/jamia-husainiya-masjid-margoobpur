@@ -101,23 +101,26 @@ export function HomeScreen({ onTabChange }: Props) {
           </svg>
         </div>
 
-        {/* Masjid name */}
+        {/* Masjid name with crescents on both sides */}
         <div className="relative z-10 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="text-2xl" style={{ color: "#c9a84c" }}>
               ☪
             </span>
+            <h2
+              className="font-bold text-white text-base leading-tight"
+              style={{ letterSpacing: "0.03em" }}
+            >
+              Jamia Husainiya Masjid Margoobpur
+            </h2>
+            <span className="text-2xl" style={{ color: "#c9a84c" }}>
+              ☪
+            </span>
           </div>
-          <h2
-            className="font-bold text-white text-base mb-1"
-            style={{ letterSpacing: "0.05em" }}
-          >
-            Jamia Husainiya Masjid Margoobpur
-          </h2>
 
           {/* Bismillah */}
           <div
-            className="text-lg mb-3"
+            className="text-lg mb-4"
             style={{ color: "#c9a84c", fontFamily: "serif" }}
           >
             بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ
