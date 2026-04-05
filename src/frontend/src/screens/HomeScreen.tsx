@@ -25,13 +25,13 @@ const DISPLAY_NAMES: Record<string, string> = {
 };
 
 const ARABIC_NAMES: Record<string, string> = {
-  fajr: "الفجر",
-  zuhr: "الظهر",
-  asr: "العصر",
-  maghrib: "المغرب",
-  isha: "العشاء",
-  khutba_juma: "خطبة الجمعة",
-  juma: "الجمعة",
+  fajr: "\u0627\u0644\u0641\u062c\u0631",
+  zuhr: "\u0627\u0644\u0638\u0647\u0631",
+  asr: "\u0627\u0644\u0639\u0635\u0631",
+  maghrib: "\u0627\u0644\u0645\u063a\u0631\u0628",
+  isha: "\u0627\u0644\u0639\u0634\u0627\u0621",
+  khutba_juma: "\u062e\u0637\u0628\u0629 \u0627\u0644\u062c\u0645\u0639\u0629",
+  juma: "\u0627\u0644\u062c\u0645\u0639\u0629",
 };
 
 export function HomeScreen({ onTabChange }: Props) {
@@ -123,6 +123,16 @@ export function HomeScreen({ onTabChange }: Props) {
       ? "Soon"
       : null;
 
+  // Fallback display values if no prayer data loaded yet
+  const displayName = nextPrayer
+    ? DISPLAY_NAMES[normalizePrayerName(nextPrayer.name)] || nextPrayer.name
+    : "Isha";
+  const displayArabic = nextPrayer
+    ? ARABIC_NAMES[normalizePrayerName(nextPrayer.name)] || ""
+    : "\u0627\u0644\u0639\u0634\u0627\u0621";
+  const displayTime = nextPrayer ? nextPrayer.time : "8:30 PM";
+  const displaySoon = soonLabel || "Soon";
+
   const bellButton = (
     <button
       type="button"
@@ -205,14 +215,15 @@ export function HomeScreen({ onTabChange }: Props) {
                 direction: "rtl",
               }}
             >
-              وَعَلَيْكُمُ السَّلام
+              وَعَلَيْكُمُ السَّلَامُ
             </div>
             <p
               className="text-xs mt-1 leading-relaxed"
               style={{ color: "#666" }}
             >
               Welcome to Jamia Husainiya Masjid Margoobpur. May Allah bless you
-              and your family.
+              and your family. Join us for daily prayers, Friday Khutba, and
+              community events.
             </p>
             {isFriday && (
               <div
@@ -226,66 +237,59 @@ export function HomeScreen({ onTabChange }: Props) {
         </div>
 
         {/* NEXT PRAYER Card */}
-        {nextPrayer && (
+        <div
+          className="rounded-2xl p-4 shadow-md"
+          style={{
+            background: "#0d3d1f",
+            border: "1px solid rgba(201,168,76,0.25)",
+          }}
+          data-ocid="home.next_prayer.card"
+        >
           <div
-            className="rounded-2xl p-4 shadow-md"
+            className="text-xs font-bold tracking-widest uppercase mb-3"
             style={{
-              background: "#0d3d1f",
-              border: "1px solid rgba(201,168,76,0.25)",
+              color: "rgba(255,255,255,0.55)",
+              letterSpacing: "0.18em",
             }}
-            data-ocid="home.next_prayer.card"
           >
-            <div
-              className="text-xs font-bold tracking-widest uppercase mb-3"
-              style={{
-                color: "rgba(255,255,255,0.55)",
-                letterSpacing: "0.18em",
-              }}
-            >
-              NEXT PRAYER
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-bold text-white text-lg">
-                  {DISPLAY_NAMES[normalizePrayerName(nextPrayer.name)] ||
-                    nextPrayer.name}
-                </div>
-                <div
-                  className="text-sm mt-0.5"
-                  style={{
-                    color: "#c9a84c",
-                    fontFamily: "serif",
-                    direction: "rtl",
-                  }}
-                >
-                  {ARABIC_NAMES[normalizePrayerName(nextPrayer.name)] || ""}
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <div className="font-bold text-2xl" style={{ color: "white" }}>
-                  {nextPrayer.time}
-                </div>
-                {soonLabel && (
-                  <div
-                    className="px-2 py-0.5 rounded-full text-xs font-bold"
-                    style={{ background: "#c9a84c", color: "#0d3d1f" }}
-                  >
-                    ⏰ {soonLabel}
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onTabChange("namaz")}
-              className="w-full mt-3 py-2 rounded-xl font-bold text-sm"
-              style={{ background: "rgba(201,168,76,0.18)", color: "#c9a84c" }}
-              data-ocid="home.namaz_times.button"
-            >
-              🕌 Sab Namaz Times Dekhein →
-            </button>
+            NEXT PRAYER
           </div>
-        )}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-bold text-white text-lg">{displayName}</div>
+              <div
+                className="text-sm mt-0.5"
+                style={{
+                  color: "#c9a84c",
+                  fontFamily: "serif",
+                  direction: "rtl",
+                }}
+              >
+                {displayArabic}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <div className="font-bold text-2xl" style={{ color: "white" }}>
+                {displayTime}
+              </div>
+              <div
+                className="px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{ background: "#c9a84c", color: "#0d3d1f" }}
+              >
+                ⏰ {displaySoon}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onTabChange("namaz")}
+            className="w-full mt-3 py-2 rounded-xl font-bold text-sm"
+            style={{ background: "rgba(201,168,76,0.18)", color: "#c9a84c" }}
+            data-ocid="home.namaz_times.button"
+          >
+            🕌 Sab Namaz Times Dekhein →
+          </button>
+        </div>
 
         {/* Quick Access Grid */}
         <div className="grid grid-cols-2 gap-3">
