@@ -16,6 +16,32 @@ export const PRAYER_DISPLAY_NAMES: Record<string, string> = {
   juma: "Juma",
 };
 
+/**
+ * Normalize a prayer name from the backend (e.g. "KhutbaJuma", "Fajr")
+ * to the canonical lowercase-underscore form used in the frontend
+ * (e.g. "khutba_juma", "fajr").
+ */
+export function normalizePrayerName(name: string): string {
+  const lower = name.toLowerCase().trim();
+  // KhutbaJuma -> khutba_juma
+  if (
+    lower === "khuṭbajuma" ||
+    lower === "khuṭba_juma" ||
+    lower === "khutbajuma" ||
+    lower === "khutba juma"
+  ) {
+    return "khutba_juma";
+  }
+  // Replace any space with underscore
+  return lower.replace(/\s+/g, "_");
+}
+
+/** Return true if the given prayer name (from backend or frontend) is the Juma prayer. */
+export function isJumaPrayer(name: string): boolean {
+  const n = normalizePrayerName(name);
+  return n === "khutba_juma" || n === "juma";
+}
+
 export function parseTime(timeStr: string): number {
   if (!timeStr) return 0;
   const clean = timeStr.trim();
@@ -44,7 +70,7 @@ export function getCurrentPrayer(prayers: PrayerInfo[]): string | null {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const sorted = [...prayers]
-    .filter((p) => p.enable && p.name !== "khutba_juma" && p.name !== "juma")
+    .filter((p) => p.enable && !isJumaPrayer(p.name))
     .sort((a, b) => parseTime(a.time) - parseTime(b.time));
 
   let current: string | null = null;
@@ -61,7 +87,7 @@ export function getNextPrayer(prayers: PrayerInfo[]): PrayerInfo | null {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const sorted = [...prayers]
-    .filter((p) => p.enable && p.name !== "khutba_juma" && p.name !== "juma")
+    .filter((p) => p.enable && !isJumaPrayer(p.name))
     .sort((a, b) => parseTime(a.time) - parseTime(b.time));
 
   return (

@@ -1,53 +1,38 @@
-# Jamia Husainiya Masjid Margoobpur — UI Redesign
+# Jamia Husainiya Masjid Margoobpur
 
 ## Current State
-The app is a full-stack mosque PWA with:
-- `App.tsx` — root layout with bottom navigation (Home, Namaz, Notice, Contact, Map, लोग, Admin)
-- `HomeScreen.tsx` — Home with Bismillah, Assalamu Alaikum, welcome msg, NEXT PRAYER card
-- `NamazScreen.tsx` — Prayer times list + Namaz Alarm Setup section with per-prayer Android intent buttons
-- `ContactScreen.tsx` — Masjid contact info + Committee member management
-- `AdminScreen.tsx` — PIN-protected admin panel (PIN: 786) for managing prayer times, notices, committee
-- `MapScreen.tsx` — OpenStreetMap embed + Google Maps directions button
-- `NoticeScreen.tsx` — Announcements list
-- `PeopleScreen.tsx` — Committee members directory
+The app currently has all major features but the user says recent (last night) changes have altered things. The user wants the app restored to its March 26, 2026 state — which corresponds to Version 22/25/26 of the app.
 
-Current design uses flat dark-green headers, basic card styling, but lacks:
-- Ornate Islamic header with Arabic Bismillah prominently displayed
-- Mosque image banner
-- Rich card-based sections with proper shadows and spacing
-- Redesigned bottom navigation icons
+Key features that must be present:
+- Hinglish UI (Hindi + English mix)
+- Home screen: IslamicHeader, mosque illustration, Assalamu Alaikum card, NEXT PRAYER card, quick access grid
+- Namaz screen: Alarm Setup section at top, prayer times list with Juma logic
+- Notice, Contact (with Committee management), Map (coordinates 29.8629687, 77.9740235), People, Admin screens
+- Bottom nav: Home, Namaz, Notice, Contact, Map, लोग, Admin
+- Admin panel PIN: 786
+- Contact: 089589 99299
+- Bell alarm feature
+- Android intent alarm buttons
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Header redesign**: Dark green Islamic theme (`#0d3d1f` to `#1a6b3a` gradient) with:
-  - Arabic text `بسم الله الرحمن الرحيم` prominently at top
-  - Mosque name `☪ Jamia Husainiya Masjid Margoobpur ☪` with crescent moon icons on both sides
-  - Subtle star/geometric SVG pattern overlay on header background
-- **Mosque image banner**: Large banner image `/assets/generated/mosque-banner.dim_800x300.jpg` below header on Home screen, with rounded bottom corners (`rounded-b-2xl`)
-- **Welcome card**: Redesigned card with `Assalamu Alaikum` title, `السلام عليكم` Arabic subtitle, and welcome text, using white background with green accent border
-- **Next Prayer card**: Dark green card (`#0d3d1f`) with `NEXT PRAYER` label, prayer name in English + Arabic, time, and `Soon` badge in gold/amber
-- **Redesigned bottom navigation**: Modern icon-based nav with proper icons for Home, Namaz, Notice, Contact, Map, Login/People, Admin — cleaner tab bar with active state highlighting
-- **Soft shadows** on all cards (`shadow-md`)
-- **Proper spacing** — consistent `gap-4` / `p-4` throughout
+- Nothing new to add
 
 ### Modify
-- **HomeScreen.tsx**: Full redesign to use mosque banner, welcome card, next prayer card
-- **All screen headers**: Upgrade to ornate Islamic header with star pattern background, Bismillah, and masjid name with crescents
-- **Bottom nav in App.tsx**: Redesign tab bar icons to be cleaner and more modern
-- **Card styling**: All cards get `rounded-2xl`, `shadow-md`, proper padding throughout all screens
+- Restore all screens to their March 26 state with correct Hinglish text
+- Ensure prayer data is clean (no duplicates like Zuhr/Dhuhr)
+- Ensure all features work correctly
 
 ### Remove
-- Nothing — all features must remain fully functional
+- Any changes introduced after March 26 that broke the app
 
 ## Implementation Plan
-1. Update `App.tsx` bottom navigation: redesign tab items with SVG icons or emoji icons, improve active/inactive state styling, cleaner visual tab bar
-2. Create a shared `IslamicHeader` component used across all screens — contains dark green gradient background with star pattern SVG overlay, Arabic Bismillah text, masjid name with ☪ crescents
-3. Redesign `HomeScreen.tsx`:
-   - Show IslamicHeader at top
-   - Mosque image banner below header with rounded bottom corners
-   - Welcome card (Assalamu Alaikum / السلام عليكم / welcome message)
-   - NEXT PRAYER card with dark green style, prayer name, Arabic name, time, Soon badge
-4. Update headers in `NamazScreen.tsx`, `ContactScreen.tsx`, `AdminScreen.tsx`, `MapScreen.tsx`, `NoticeScreen.tsx`, `PeopleScreen.tsx` to use richer design
-5. Upgrade card styles across all screens: rounded-2xl, shadows, better spacing
-6. Validate — typecheck + build
+1. Write a clean, complete App.tsx with proper bottom nav (7 tabs)
+2. Rebuild HomeScreen with IslamicHeader, mosque image, greeting card, next prayer card
+3. Rebuild NamazScreen with alarm setup section and clean prayer list
+4. Rebuild ContactScreen with committee management
+5. Rebuild MapScreen with correct coordinates
+6. Rebuild AdminScreen (PIN: 786)
+7. Rebuild NoticeScreen and PeopleScreen
+8. Ensure all data files are correct

@@ -8,6 +8,7 @@ import {
   usePrayerTimes,
   useUpdateMultiplePrayerTimes,
 } from "../hooks/useQueries";
+import { normalizePrayerName } from "../utils/prayerUtils";
 
 const ADMIN_PIN = "786";
 
@@ -31,6 +32,8 @@ export function AdminScreen() {
   // Prayer times
   const { data: prayers = [] } = usePrayerTimes();
   const updatePrayerTimes = useUpdateMultiplePrayerTimes();
+  // editedTimes keys use the ORIGINAL backend name (e.g. "Fajr", "KhutbaJuma")
+  // so that updateMultiplePrayerTimes sends the correct key to the backend
   const [editedTimes, setEditedTimes] = useState<Record<string, string>>({});
   const [saveMsg, setSaveMsg] = useState("");
 
@@ -236,7 +239,9 @@ export function AdminScreen() {
                     className="font-semibold text-sm"
                     style={{ color: "#0d3d1f" }}
                   >
-                    {PRAYER_DISPLAY_NAMES[prayer.name] || prayer.name}
+                    {/* Use normalized name for display but keep original name for the key */}
+                    {PRAYER_DISPLAY_NAMES[normalizePrayerName(prayer.name)] ||
+                      prayer.name}
                   </div>
                   <div className="text-xs" style={{ color: "#888" }}>
                     Abhi: {prayer.time}
@@ -248,13 +253,15 @@ export function AdminScreen() {
                   onChange={(e) =>
                     setEditedTimes((prev) => ({
                       ...prev,
+                      // Keep the original backend name as key so updateMultiplePrayerTimes
+                      // sends the correct key (e.g. "KhutbaJuma") to the backend
                       [prayer.name]: e.target.value,
                     }))
                   }
                   placeholder={prayer.time}
                   className="w-28 px-2 py-1.5 rounded-lg border text-sm text-center"
                   style={{ borderColor: "#c8e6c9", outline: "none" }}
-                  data-ocid={`admin.prayer_${prayer.name}.input`}
+                  data-ocid={`admin.prayer_${normalizePrayerName(prayer.name)}.input`}
                 />
               </div>
             ))}

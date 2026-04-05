@@ -5,7 +5,9 @@ import { isBellRinging, startBell, stopBell } from "../utils/bellAudio";
 import {
   ALARM_INTENTS,
   getCurrentPrayer,
+  isJumaPrayer,
   launchAndroidAlarm,
+  normalizePrayerName,
   parseTime,
 } from "../utils/prayerUtils";
 
@@ -90,13 +92,12 @@ export function NamazScreen() {
   const isFriday = now.getDay() === 5;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
+  // Normalize names for filtering — backend sends "KhutbaJuma", frontend uses "khutba_juma"
   const regularPrayers = prayers
-    .filter((p) => p.name !== "khutba_juma" && p.name !== "juma")
+    .filter((p) => !isJumaPrayer(p.name))
     .sort((a, b) => parseTime(a.time) - parseTime(b.time));
 
-  const jumaPrayer = prayers.find(
-    (p) => p.name === "khutba_juma" || p.name === "juma",
-  );
+  const jumaPrayer = prayers.find((p) => isJumaPrayer(p.name));
 
   const currentPrayerName = getCurrentPrayer(
     regularPrayers.map((p) => ({ ...p, displayName: p.name, isJuma: false })),
@@ -116,6 +117,8 @@ export function NamazScreen() {
     isDimmed = false,
     isJumaHighlight = false,
   ) => {
+    // Normalize the name for display lookups
+    const normalizedName = normalizePrayerName(prayer.name);
     const isCurrent =
       prayer.name === currentPrayerName && !isDimmed && !isJumaHighlight;
     const isUpcoming =
@@ -123,8 +126,8 @@ export function NamazScreen() {
       !isJumaHighlight &&
       prayer.name !== currentPrayerName &&
       parseTime(prayer.time) > currentMinutes;
-    const displayName = DISPLAY_NAMES[prayer.name] || prayer.name;
-    const hindiName = HINDI_NAMES[prayer.name] || "";
+    const displayName = DISPLAY_NAMES[normalizedName] || prayer.name;
+    const hindiName = HINDI_NAMES[normalizedName] || "";
 
     return (
       <div

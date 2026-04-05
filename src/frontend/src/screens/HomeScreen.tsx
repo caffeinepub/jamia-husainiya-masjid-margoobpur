@@ -3,7 +3,12 @@ import type { Tab } from "../App";
 import { IslamicHeader } from "../components/IslamicHeader";
 import { usePrayerTimes } from "../hooks/useQueries";
 import { isBellRinging, startBell, stopBell } from "../utils/bellAudio";
-import { getCurrentPrayer, parseTime } from "../utils/prayerUtils";
+import {
+  getCurrentPrayer,
+  isJumaPrayer,
+  normalizePrayerName,
+  parseTime,
+} from "../utils/prayerUtils";
 
 interface Props {
   onTabChange: (tab: Tab) => void;
@@ -46,7 +51,7 @@ export function HomeScreen({ onTabChange }: Props) {
   useEffect(() => {
     if (!prayers.length) return;
     const regularPrayers = prayers.filter(
-      (p) => p.enable && p.name !== "khutba_juma" && p.name !== "juma",
+      (p) => p.enable && !isJumaPrayer(p.name),
     );
     const currentPrayer = getCurrentPrayer(
       regularPrayers.map((p) => ({ ...p, displayName: p.name, isJuma: false })),
@@ -101,8 +106,9 @@ export function HomeScreen({ onTabChange }: Props) {
   const isFriday = now.getDay() === 5;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
+  // Normalize for filtering: backend sends "KhutbaJuma", frontend expects "khutba_juma"
   const regularPrayers = prayers
-    .filter((p) => p.enable && p.name !== "khutba_juma" && p.name !== "juma")
+    .filter((p) => p.enable && !isJumaPrayer(p.name))
     .sort((a, b) => parseTime(a.time) - parseTime(b.time));
 
   const nextPrayer =
@@ -241,7 +247,8 @@ export function HomeScreen({ onTabChange }: Props) {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-bold text-white text-lg">
-                  {DISPLAY_NAMES[nextPrayer.name] || nextPrayer.name}
+                  {DISPLAY_NAMES[normalizePrayerName(nextPrayer.name)] ||
+                    nextPrayer.name}
                 </div>
                 <div
                   className="text-sm mt-0.5"
@@ -251,7 +258,7 @@ export function HomeScreen({ onTabChange }: Props) {
                     direction: "rtl",
                   }}
                 >
-                  {ARABIC_NAMES[nextPrayer.name] || ""}
+                  {ARABIC_NAMES[normalizePrayerName(nextPrayer.name)] || ""}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
