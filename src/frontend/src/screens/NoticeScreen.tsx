@@ -1,76 +1,75 @@
-import type { Announcement } from "../backend.d";
 import { useAnnouncements } from "../hooks/useQueries";
 
-function formatTimestamp(ts: bigint): string {
-  try {
-    const ms = Number(ts / 1_000_000n);
-    return new Date(ms).toLocaleDateString("hi-IN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return "";
-  }
-}
-
 export function NoticeScreen() {
-  const { data: announcements, isLoading } = useAnnouncements();
+  const { data: announcements = [], isLoading } = useAnnouncements();
 
   return (
-    <div className="px-4 py-5" data-ocid="notice.page">
-      <div className="mb-5">
-        <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
-          सूचनाएं और एलान
-        </h2>
-        <p className="text-xs text-gray-500 mt-0.5">
-          मस्जिद की गतिविधियों से अपडेट रहें
-        </p>
+    <div className="flex flex-col">
+      {/* Header */}
+      <div className="px-4 py-4" style={{ background: "#1a6b3a" }}>
+        <div className="text-white font-bold text-base">📢 Notice Board</div>
+        <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
+          Masjid ki taaza khabren
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3" data-ocid="notice.loading_state">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="rounded-2xl p-4 shadow-card animate-pulse"
-              style={{ background: "#e8f5ee", height: "100px" }}
-            />
-          ))}
-        </div>
-      ) : !announcements || announcements.length === 0 ? (
-        <div
-          className="bg-white rounded-2xl p-8 text-center shadow-card"
-          data-ocid="notice.empty_state"
-        >
-          <div className="text-4xl mb-3">📋</div>
-          <p className="text-sm text-gray-500">कोई सूचना नहीं है।</p>
-          <p className="text-xs text-gray-400 mt-1">Admin panel से सूचनाएं जोड़ें।</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {(announcements as Announcement[]).map((ann, index) => (
-            <div
-              key={String(ann.id)}
-              className="bg-white rounded-2xl p-4 shadow-card"
-              data-ocid={`notice.item.${index + 1}`}
-            >
-              <h3 className="font-bold text-sm text-gray-800 leading-snug mb-2">
-                {ann.title}
-              </h3>
-              <p className="text-xs text-gray-600 leading-relaxed mb-2">
-                {ann.body}
-              </p>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium"
-                style={{ background: "#e8f5ee", color: "#1a6b3c" }}
-              >
-                {formatTimestamp(ann.timestamp)}
-              </span>
+      <div className="p-4 flex flex-col gap-3">
+        {isLoading ? (
+          <div className="flex flex-col gap-3" data-ocid="notice.loading_state">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-24 rounded-xl animate-pulse"
+                style={{ background: "#e8f5e9" }}
+              />
+            ))}
+          </div>
+        ) : announcements.length === 0 ? (
+          <div
+            className="rounded-2xl p-8 flex flex-col items-center gap-3 text-center"
+            style={{ background: "white" }}
+            data-ocid="notice.empty_state"
+          >
+            <span className="text-4xl">📭</span>
+            <div className="font-bold" style={{ color: "#0f4a29" }}>
+              Koi Notice Nahi
             </div>
-          ))}
-        </div>
-      )}
+            <div className="text-sm" style={{ color: "#888" }}>
+              Abhi koi notice nahi hai. Jab koi announcement aayega, yahan
+              dikhega.
+            </div>
+          </div>
+        ) : (
+          announcements.map((notice, i) => (
+            <div
+              key={`${notice.title}-${notice.date}`}
+              className="rounded-xl overflow-hidden shadow-card"
+              style={{ background: "white", border: "1px solid #e8f5e9" }}
+              data-ocid={`notice.item.${i + 1}`}
+            >
+              <div
+                className="px-4 py-2 flex items-center justify-between"
+                style={{ background: "#e8f5e9" }}
+              >
+                <span
+                  className="font-bold text-sm"
+                  style={{ color: "#0f4a29" }}
+                >
+                  {notice.title}
+                </span>
+                <span className="text-xs" style={{ color: "#555" }}>
+                  📅 {notice.date}
+                </span>
+              </div>
+              <div className="px-4 py-3">
+                <p className="text-sm" style={{ color: "#333" }}>
+                  {notice.message}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

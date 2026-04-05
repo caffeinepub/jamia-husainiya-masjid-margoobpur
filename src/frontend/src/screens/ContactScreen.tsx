@@ -1,282 +1,384 @@
-import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import type { CommitteeMember } from "../backend.d";
 import {
   useAddCommitteeMember,
   useCommitteeMembers,
   useDeleteCommitteeMember,
 } from "../hooks/useQueries";
 
+const ADMIN_PIN = "786";
+
 export function ContactScreen() {
-  const { data: members, isLoading } = useCommitteeMembers();
+  const { data: members = [], isLoading } = useCommitteeMembers();
   const addMember = useAddCommitteeMember();
   const deleteMember = useDeleteCommitteeMember();
 
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", role: "", phoneNumber: "" });
-  const [error, setError] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [pinVerified, setPinVerified] = useState(false);
+  const [deletePin, setDeletePin] = useState("");
+  const [deletingId, setDeletingId] = useState<bigint | null>(null);
 
-  function handleAdd() {
-    if (!form.name.trim() || !form.phoneNumber.trim()) {
-      setError("नाम और फ़ोन नंबर ज़रूरी है।");
+  function handleAddSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pinVerified) {
+      alert("Pehle PIN verify karo!");
+      return;
+    }
+    if (!name.trim() || !role.trim() || !phone.trim()) {
+      alert("Sab fields bharo!");
       return;
     }
     addMember.mutate(
       {
-        name: form.name.trim(),
-        role: form.role.trim(),
-        phoneNumber: form.phoneNumber.trim(),
+        pin: ADMIN_PIN,
+        name: name.trim(),
+        role: role.trim(),
+        phoneNumber: phone.trim(),
       },
       {
         onSuccess: () => {
-          setForm({ name: "", role: "", phoneNumber: "" });
-          setError("");
-          setShowForm(false);
+          setName("");
+          setRole("");
+          setPhone("");
+          setShowAddForm(false);
+          setPinVerified(false);
+          setPinInput("");
         },
-        onError: () => setError("सेव करने में समस्या हुई। दोबारा कोशिश करें।"),
       },
     );
   }
 
+  function handleDelete(id: bigint) {
+    if (deletePin !== ADMIN_PIN) {
+      setDeletingId(id);
+      return;
+    }
+    deleteMember.mutate({ pin: ADMIN_PIN, id });
+    setDeletingId(null);
+    setDeletePin("");
+  }
+
+  function handleDeleteWithPin(id: bigint) {
+    if (deletePin === ADMIN_PIN) {
+      deleteMember.mutate({ pin: ADMIN_PIN, id });
+      setDeletingId(null);
+      setDeletePin("");
+    } else {
+      alert("PIN galat hai!");
+    }
+  }
+
   return (
-    <div className="px-4 py-5" data-ocid="contact.page">
-      <div className="mb-5">
-        <h2 className="font-bold text-xl" style={{ color: "#1a6b3c" }}>
-          संपर्क करें
-        </h2>
-        <p className="text-xs text-gray-500 mt-0.5">
-          जामिया हुसैनिया मस्जिद मरगूबपुर से जुड़ें
-        </p>
+    <div className="flex flex-col">
+      {/* Header */}
+      <div className="px-4 py-4" style={{ background: "#1a6b3a" }}>
+        <div className="text-white font-bold text-base">📞 Humse Milein</div>
+        <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
+          Masjid se contact karo
+        </div>
       </div>
 
-      {/* Mosque identity card */}
-      <div
-        className="rounded-2xl p-5 mb-4 relative overflow-hidden text-white"
-        style={{ background: "#1a6b3c" }}
-      >
+      <div className="p-4 flex flex-col gap-4">
+        {/* Main contact card */}
         <div
-          className="absolute inset-0 opacity-10 pointer-events-none"
-          aria-hidden="true"
+          className="rounded-2xl overflow-hidden shadow-card"
+          style={{ background: "white", border: "1px solid #e8f5e9" }}
         >
-          <svg role="img" aria-label="decorative" width="100%" height="100%">
-            <defs>
-              <pattern
-                id="cpat"
-                x="0"
-                y="0"
-                width="30"
-                height="30"
-                patternUnits="userSpaceOnUse"
-              >
-                <polygon
-                  points="15,1 18,10 28,10 20,16 23,26 15,20 7,26 10,16 2,10 12,10"
-                  fill="white"
-                  fillOpacity="0.5"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#cpat)" />
-          </svg>
-        </div>
-        <div className="relative flex items-center gap-3">
-          <span className="text-4xl">🕌</span>
-          <div>
-            <h3 className="font-bold text-base">जामिया हुसैनिया मस्जिद मरगूबपुर</h3>
-            <p className="text-xs mt-0.5" style={{ color: "#c9a84c" }}>
-              جامعه حسينيه مسجد مرقوبپور
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Address */}
-      <div
-        className="bg-white rounded-2xl p-4 shadow-card mb-4"
-        data-ocid="contact.address.card"
-      >
-        <div className="flex items-start gap-3">
-          <span className="text-xl mt-0.5">📍</span>
-          <div>
-            <p className="font-semibold text-sm" style={{ color: "#1a6b3c" }}>
-              पता
-            </p>
-            <p className="text-sm text-gray-600 mt-0.5 leading-relaxed">
-              जामिया हुसैनिया मस्जिद, मरगूबपुर दीदहेरी,
-              <br />
-              हरिद्वार, उत्तराखंड — 247667
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <a
-          href="tel:+918958999299"
-          className="flex items-center justify-center gap-2 rounded-2xl p-4 font-bold text-sm text-white shadow-card"
-          style={{ background: "#1a6b3c" }}
-          data-ocid="contact.call.button"
-        >
-          <span className="text-lg">📞</span>
-          अभी कॉल करें
-        </a>
-        <a
-          href="https://wa.me/918958999299"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 rounded-2xl p-4 font-bold text-sm text-white shadow-card"
-          style={{ background: "#25d366" }}
-          data-ocid="contact.whatsapp.button"
-        >
-          <span className="text-lg">💬</span>
-          WhatsApp
-        </a>
-      </div>
-
-      {/* Committee */}
-      <div className="bg-white rounded-2xl shadow-card overflow-hidden mb-4">
-        <div
-          className="px-4 py-3 border-b flex items-center justify-between"
-          style={{ borderColor: "#e8f5ee" }}
-        >
-          <h3 className="font-bold text-sm" style={{ color: "#1a6b3c" }}>
-            मस्जिद कमेटी
-          </h3>
-          <button
-            type="button"
-            onClick={() => {
-              setShowForm((v) => !v);
-              setError("");
-            }}
-            className="text-xs font-bold px-3 py-1.5 rounded-full text-white"
-            style={{ background: "#1a6b3c" }}
-            data-ocid="contact.committee.open_modal_button"
-          >
-            {showForm ? "✕ रद्द करें" : "+ जोड़ें"}
-          </button>
-        </div>
-
-        {showForm && (
-          <div
-            className="px-4 py-4 border-b"
-            style={{ borderColor: "#e8f5ee", background: "#f7fbf8" }}
-            data-ocid="contact.committee.modal"
-          >
-            <div className="flex flex-col gap-2">
-              <input
-                type="text"
-                placeholder="नाम *"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "#c8e6d4" }}
-                data-ocid="contact.committee.name.input"
-              />
-              <input
-                type="text"
-                placeholder="पद (जैसे: इमाम, सेक्रेटरी)"
-                value={form.role}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, role: e.target.value }))
-                }
-                className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "#c8e6d4" }}
-                data-ocid="contact.committee.role.input"
-              />
-              <input
-                type="tel"
-                placeholder="फ़ोन नंबर *"
-                value={form.phoneNumber}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, phoneNumber: e.target.value }))
-                }
-                className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
-                style={{ borderColor: "#c8e6d4" }}
-                data-ocid="contact.committee.phone.input"
-              />
-              {error && (
-                <p
-                  className="text-xs text-red-500"
-                  data-ocid="contact.committee.error_state"
-                >
-                  {error}
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={addMember.isPending}
-                className="w-full rounded-xl py-2 text-sm font-bold text-white flex items-center justify-center gap-2"
-                style={{ background: "#1a6b3c" }}
-                data-ocid="contact.committee.submit_button"
-              >
-                {addMember.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                {addMember.isPending ? "सेव हो रहा है..." : "सेव करें"}
-              </button>
+          <div className="px-4 py-3" style={{ background: "#e8f5e9" }}>
+            <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
+              🕌 Jamia Husainiya Masjid Margoobpur
             </div>
           </div>
-        )}
+          <div className="p-4 flex flex-col gap-3">
+            <div className="text-sm" style={{ color: "#555" }}>
+              📍 Margoobpur Deedaheri, Haridwar, Uttarakhand — 247667
+            </div>
+            <div className="text-sm font-semibold" style={{ color: "#0f4a29" }}>
+              📞 089589 99299
+            </div>
+            <div className="flex gap-3">
+              <a
+                href="tel:08958999299"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
+                style={{ background: "#1a6b3a", color: "white" }}
+                data-ocid="contact.call.button"
+              >
+                📞 Call karo
+              </a>
+              <a
+                href="https://wa.me/918958999299"
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
+                style={{ background: "#25d366", color: "white" }}
+                data-ocid="contact.whatsapp.button"
+              >
+                💬 WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
 
-        {isLoading ? (
-          <div
-            className="px-4 py-6 text-center text-sm text-gray-400"
-            data-ocid="contact.committee.loading_state"
-          >
-            लोड हो रहा है...
-          </div>
-        ) : !members || members.length === 0 ? (
-          <div
-            className="px-4 py-6 text-center text-sm text-gray-400"
-            data-ocid="contact.committee.empty_state"
-          >
-            कोई सदस्य नहीं जोड़ा गया।
-          </div>
-        ) : (
-          (members as CommitteeMember[]).map((member, index) => (
-            <div
-              key={String(member.id)}
-              className="flex items-center justify-between px-4 py-3"
-              style={{
-                borderBottom:
-                  index < members.length - 1 ? "1px solid #f0f7f0" : "none",
-              }}
-              data-ocid={`contact.committee.item.${index + 1}`}
+        {/* Committee Members */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
+              👥 Masjid Committee
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="text-xs px-3 py-1.5 rounded-full font-semibold"
+              style={{ background: "#1a6b3a", color: "white" }}
+              data-ocid="contact.add_member.button"
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-gray-800 truncate">
-                  {member.name}
-                </p>
-                {member.role && (
-                  <p className="text-xs text-gray-500">{member.role}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 ml-2">
-                <a
-                  href={`tel:${member.phoneNumber}`}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full"
-                  style={{ background: "#e8f5ee", color: "#1a6b3c" }}
-                  data-ocid={`contact.committee.call.button.${index + 1}`}
+              + Member Add karo
+            </button>
+          </div>
+
+          {/* Add Form */}
+          {showAddForm && (
+            <div
+              className="rounded-xl overflow-hidden mb-3 shadow-card"
+              style={{ background: "white", border: "1px solid #e8f5e9" }}
+              data-ocid="contact.add_member.modal"
+            >
+              <div className="px-4 py-2" style={{ background: "#e8f5e9" }}>
+                <span
+                  className="font-bold text-sm"
+                  style={{ color: "#0f4a29" }}
                 >
-                  {member.phoneNumber}
-                </a>
+                  Naya Member Add karo
+                </span>
+              </div>
+              <form
+                onSubmit={handleAddSubmit}
+                className="p-4 flex flex-col gap-3"
+              >
+                {!pinVerified ? (
+                  <div className="flex flex-col gap-2">
+                    <label
+                      htmlFor="contact-pin-input"
+                      className="text-xs font-semibold"
+                      style={{ color: "#555" }}
+                    >
+                      Admin PIN dalo
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        id="contact-pin-input"
+                        type="password"
+                        value={pinInput}
+                        onChange={(e) => setPinInput(e.target.value)}
+                        placeholder="PIN"
+                        className="flex-1 px-3 py-2 rounded-lg border text-sm"
+                        style={{ borderColor: "#c8e6c9" }}
+                        data-ocid="contact.pin.input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (pinInput === ADMIN_PIN) setPinVerified(true);
+                          else alert("PIN galat hai!");
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold"
+                        style={{ background: "#1a6b3a", color: "white" }}
+                        data-ocid="contact.pin_verify.button"
+                      >
+                        Verify karo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Name"
+                      className="px-3 py-2 rounded-lg border text-sm"
+                      style={{ borderColor: "#c8e6c9" }}
+                      data-ocid="contact.member_name.input"
+                    />
+                    <input
+                      type="text"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      placeholder="Role (jaise: Imam, Secretary)"
+                      className="px-3 py-2 rounded-lg border text-sm"
+                      style={{ borderColor: "#c8e6c9" }}
+                      data-ocid="contact.member_role.input"
+                    />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Phone Number"
+                      className="px-3 py-2 rounded-lg border text-sm"
+                      style={{ borderColor: "#c8e6c9" }}
+                      data-ocid="contact.member_phone.input"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        disabled={addMember.isPending}
+                        className="flex-1 py-2 rounded-lg font-semibold text-sm"
+                        style={{ background: "#1a6b3a", color: "white" }}
+                        data-ocid="contact.add_member.submit_button"
+                      >
+                        {addMember.isPending
+                          ? "Save ho raha hai..."
+                          : "Save karo"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddForm(false);
+                          setPinVerified(false);
+                          setPinInput("");
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm"
+                        style={{ background: "#f5f5f5", color: "#555" }}
+                        data-ocid="contact.add_member.cancel_button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </form>
+            </div>
+          )}
+
+          {/* Delete PIN prompt */}
+          {deletingId !== null && (
+            <div
+              className="rounded-xl p-4 mb-3 shadow-card"
+              style={{ background: "white", border: "1px solid #ffcdd2" }}
+              data-ocid="contact.delete_confirm.dialog"
+            >
+              <div
+                className="text-sm font-semibold mb-2"
+                style={{ color: "#c0392b" }}
+              >
+                Member delete karne ke liye Admin PIN dalo
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={deletePin}
+                  onChange={(e) => setDeletePin(e.target.value)}
+                  placeholder="PIN"
+                  className="flex-1 px-3 py-2 rounded-lg border text-sm"
+                  style={{ borderColor: "#ffcdd2" }}
+                  data-ocid="contact.delete_pin.input"
+                />
                 <button
                   type="button"
-                  onClick={() => deleteMember.mutate(member.id)}
-                  disabled={deleteMember.isPending}
-                  className="text-xs text-red-400 hover:text-red-600 px-1 py-1 rounded-full"
-                  aria-label="हटाएं"
-                  data-ocid={`contact.committee.delete_button.${index + 1}`}
+                  onClick={() =>
+                    deletingId !== null && handleDeleteWithPin(deletingId)
+                  }
+                  className="px-4 py-2 rounded-lg text-sm font-semibold"
+                  style={{ background: "#c0392b", color: "white" }}
+                  data-ocid="contact.delete.confirm_button"
                 >
-                  ✕
+                  Delete karo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingId(null);
+                    setDeletePin("");
+                  }}
+                  className="px-3 py-2 rounded-lg text-sm"
+                  style={{ background: "#f5f5f5", color: "#555" }}
+                  data-ocid="contact.delete.cancel_button"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
-          ))
-        )}
+          )}
+
+          {/* Members list */}
+          {isLoading ? (
+            <div
+              className="flex flex-col gap-2"
+              data-ocid="contact.loading_state"
+            >
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 rounded-xl animate-pulse"
+                  style={{ background: "#e8f5e9" }}
+                />
+              ))}
+            </div>
+          ) : members.length === 0 ? (
+            <div
+              className="rounded-xl p-6 text-center"
+              style={{ background: "#f5f5f5" }}
+              data-ocid="contact.members.empty_state"
+            >
+              <div className="text-sm" style={{ color: "#888" }}>
+                Abhi koi member nahi. "+ Member Add karo" se add karein.
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {members.map((member, i) => (
+                <div
+                  key={String(member.id)}
+                  className="rounded-xl overflow-hidden shadow-xs"
+                  style={{ background: "white", border: "1px solid #e8f5e9" }}
+                  data-ocid={`contact.member.item.${i + 1}`}
+                >
+                  <div className="flex items-center px-4 py-3 gap-3">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
+                      style={{ background: "#1a6b3a" }}
+                    >
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="font-bold text-sm truncate"
+                        style={{ color: "#0f4a29" }}
+                      >
+                        {member.name}
+                      </div>
+                      <div className="text-xs" style={{ color: "#888" }}>
+                        {member.role}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`tel:${member.phoneNumber}`}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                        style={{ background: "#e8f5e9" }}
+                        data-ocid={`contact.member_call.button.${i + 1}`}
+                      >
+                        📞
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(member.id)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                        style={{ background: "#ffebee" }}
+                        data-ocid={`contact.member_delete.button.${i + 1}`}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

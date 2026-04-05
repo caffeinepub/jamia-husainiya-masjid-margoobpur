@@ -8,16 +8,15 @@ export interface None {
 }
 export type Option<T> = Some<T> | None;
 export interface Announcement {
-    id: bigint;
     title: string;
-    body: string;
-    timestamp: Time;
+    date: string;
+    message: string;
 }
 export interface PrayerTime {
     name: string;
     time: string;
+    enable: boolean;
 }
-export type Time = bigint;
 export interface CommitteeMember {
     id: bigint;
     name: string;
@@ -25,18 +24,17 @@ export interface CommitteeMember {
     phoneNumber: string;
 }
 export interface backendInterface {
-    addAnnouncement(pin: string, title: string, body: string): Promise<boolean>;
+    addAnnouncement(pin: string, title: string, message: string, date: string): Promise<boolean>;
     addCommitteeMember(pin: string, name: string, role: string, phoneNumber: string): Promise<boolean>;
     deleteAnnouncement(pin: string, id: bigint): Promise<boolean>;
     deleteCommitteeMember(pin: string, id: bigint): Promise<boolean>;
-    editAnnouncement(pin: string, id: bigint, title: string, body: string): Promise<boolean>;
-    editCommitteeMember(pin: string, id: bigint, name: string, role: string, phoneNumber: string): Promise<boolean>;
+    getAllPrayerTimes(): Promise<Array<PrayerTime>>;
+    getAnnouncement(id: bigint): Promise<Announcement | null>;
     getAnnouncements(): Promise<Array<Announcement>>;
-    getAnnouncementsSortedByTime(): Promise<Array<Announcement>>;
     getCommitteeMembers(): Promise<Array<CommitteeMember>>;
-    getCommitteeMembersSortedByRole(): Promise<Array<CommitteeMember>>;
-    getPrayerTimes(): Promise<Array<PrayerTime>>;
-    getPrayerTimesSorted(): Promise<Array<PrayerTime>>;
-    updateMultiplePrayerTimes(pin: string, times: Array<[string, string]>): Promise<boolean>;
-    updatePrayerTime(pin: string, name: string, time: string): Promise<boolean>;
+    getPrayerTime(prayerName: string): Promise<PrayerTime | null>;
+    getSortedPrayerTimes(): Promise<Array<PrayerTime>>;
+    togglePrayerTime(pin: string, prayerName: string, enable: boolean): Promise<boolean>;
+    updateMultiplePrayerTimes(pin: string, newTimes: Array<[string, string]>): Promise<boolean>;
+    updatePrayerTime(pin: string, prayerTime: PrayerTime): Promise<boolean>;
 }

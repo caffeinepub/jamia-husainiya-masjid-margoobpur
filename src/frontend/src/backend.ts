@@ -90,16 +90,15 @@ export class ExternalBlob {
     }
 }
 export interface Announcement {
-    id: bigint;
     title: string;
-    body: string;
-    timestamp: Time;
+    date: string;
+    message: string;
 }
 export interface PrayerTime {
     name: string;
     time: string;
+    enable: boolean;
 }
-export type Time = bigint;
 export interface CommitteeMember {
     id: bigint;
     name: string;
@@ -107,34 +106,34 @@ export interface CommitteeMember {
     phoneNumber: string;
 }
 export interface backendInterface {
-    addAnnouncement(pin: string, title: string, body: string): Promise<boolean>;
+    addAnnouncement(pin: string, title: string, message: string, date: string): Promise<boolean>;
     addCommitteeMember(pin: string, name: string, role: string, phoneNumber: string): Promise<boolean>;
     deleteAnnouncement(pin: string, id: bigint): Promise<boolean>;
     deleteCommitteeMember(pin: string, id: bigint): Promise<boolean>;
-    editAnnouncement(pin: string, id: bigint, title: string, body: string): Promise<boolean>;
-    editCommitteeMember(pin: string, id: bigint, name: string, role: string, phoneNumber: string): Promise<boolean>;
+    getAllPrayerTimes(): Promise<Array<PrayerTime>>;
+    getAnnouncement(id: bigint): Promise<Announcement | null>;
     getAnnouncements(): Promise<Array<Announcement>>;
-    getAnnouncementsSortedByTime(): Promise<Array<Announcement>>;
     getCommitteeMembers(): Promise<Array<CommitteeMember>>;
-    getCommitteeMembersSortedByRole(): Promise<Array<CommitteeMember>>;
-    getPrayerTimes(): Promise<Array<PrayerTime>>;
-    getPrayerTimesSorted(): Promise<Array<PrayerTime>>;
-    updateMultiplePrayerTimes(pin: string, times: Array<[string, string]>): Promise<boolean>;
-    updatePrayerTime(pin: string, name: string, time: string): Promise<boolean>;
+    getPrayerTime(prayerName: string): Promise<PrayerTime | null>;
+    getSortedPrayerTimes(): Promise<Array<PrayerTime>>;
+    togglePrayerTime(pin: string, prayerName: string, enable: boolean): Promise<boolean>;
+    updateMultiplePrayerTimes(pin: string, newTimes: Array<[string, string]>): Promise<boolean>;
+    updatePrayerTime(pin: string, prayerTime: PrayerTime): Promise<boolean>;
 }
+import type { Announcement as _Announcement, PrayerTime as _PrayerTime } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async addAnnouncement(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+    async addAnnouncement(arg0: string, arg1: string, arg2: string, arg3: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.addAnnouncement(arg0, arg1, arg2);
+                const result = await this.actor.addAnnouncement(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addAnnouncement(arg0, arg1, arg2);
+            const result = await this.actor.addAnnouncement(arg0, arg1, arg2, arg3);
             return result;
         }
     }
@@ -180,32 +179,32 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async editAnnouncement(arg0: string, arg1: bigint, arg2: string, arg3: string): Promise<boolean> {
+    async getAllPrayerTimes(): Promise<Array<PrayerTime>> {
         if (this.processError) {
             try {
-                const result = await this.actor.editAnnouncement(arg0, arg1, arg2, arg3);
+                const result = await this.actor.getAllPrayerTimes();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.editAnnouncement(arg0, arg1, arg2, arg3);
+            const result = await this.actor.getAllPrayerTimes();
             return result;
         }
     }
-    async editCommitteeMember(arg0: string, arg1: bigint, arg2: string, arg3: string, arg4: string): Promise<boolean> {
+    async getAnnouncement(arg0: bigint): Promise<Announcement | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.editCommitteeMember(arg0, arg1, arg2, arg3, arg4);
-                return result;
+                const result = await this.actor.getAnnouncement(arg0);
+                return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.editCommitteeMember(arg0, arg1, arg2, arg3, arg4);
-            return result;
+            const result = await this.actor.getAnnouncement(arg0);
+            return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async getAnnouncements(): Promise<Array<Announcement>> {
@@ -219,20 +218,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getAnnouncements();
-            return result;
-        }
-    }
-    async getAnnouncementsSortedByTime(): Promise<Array<Announcement>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getAnnouncementsSortedByTime();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAnnouncementsSortedByTime();
             return result;
         }
     }
@@ -250,45 +235,45 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getCommitteeMembersSortedByRole(): Promise<Array<CommitteeMember>> {
+    async getPrayerTime(arg0: string): Promise<PrayerTime | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getCommitteeMembersSortedByRole();
+                const result = await this.actor.getPrayerTime(arg0);
+                return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPrayerTime(arg0);
+            return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getSortedPrayerTimes(): Promise<Array<PrayerTime>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSortedPrayerTimes();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getCommitteeMembersSortedByRole();
+            const result = await this.actor.getSortedPrayerTimes();
             return result;
         }
     }
-    async getPrayerTimes(): Promise<Array<PrayerTime>> {
+    async togglePrayerTime(arg0: string, arg1: string, arg2: boolean): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPrayerTimes();
+                const result = await this.actor.togglePrayerTime(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPrayerTimes();
-            return result;
-        }
-    }
-    async getPrayerTimesSorted(): Promise<Array<PrayerTime>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPrayerTimesSorted();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPrayerTimesSorted();
+            const result = await this.actor.togglePrayerTime(arg0, arg1, arg2);
             return result;
         }
     }
@@ -306,20 +291,26 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updatePrayerTime(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+    async updatePrayerTime(arg0: string, arg1: PrayerTime): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.updatePrayerTime(arg0, arg1, arg2);
+                const result = await this.actor.updatePrayerTime(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updatePrayerTime(arg0, arg1, arg2);
+            const result = await this.actor.updatePrayerTime(arg0, arg1);
             return result;
         }
     }
+}
+function from_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Announcement]): Announcement | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_PrayerTime]): PrayerTime | null {
+    return value.length === 0 ? null : value[0];
 }
 export interface CreateActorOptions {
     agent?: Agent;

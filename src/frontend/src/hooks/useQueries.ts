@@ -9,24 +9,43 @@ export function usePrayerTimes() {
     queryKey: ["prayerTimes"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getPrayerTimes();
+      return actor.getAllPrayerTimes();
     },
     enabled: !!actor && !isFetching,
     staleTime: 1000 * 60 * 5,
   });
 }
 
-export function useUpdatePrayerTimes() {
+export function useUpdatePrayerTime() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (times: Array<[string, string]>) => {
+    mutationFn: async ({
+      pin,
+      prayerTime,
+    }: { pin: string; prayerTime: PrayerTime }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.updateMultiplePrayerTimes("786", times);
+      return actor.updatePrayerTime(pin, prayerTime);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["prayerTimes"] });
-      window.dispatchEvent(new Event("prayerTimesUpdated"));
+    },
+  });
+}
+
+export function useUpdateMultiplePrayerTimes() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      pin,
+      times,
+    }: { pin: string; times: Array<[string, string]> }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.updateMultiplePrayerTimes(pin, times);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["prayerTimes"] });
     },
   });
 }
@@ -38,7 +57,7 @@ export function useAnnouncements() {
     queryKey: ["announcements"],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAnnouncementsSortedByTime();
+      return actor.getAnnouncements();
     },
     enabled: !!actor && !isFetching,
     staleTime: 1000 * 60 * 2,
@@ -50,14 +69,18 @@ export function useAddAnnouncement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
+      pin,
       title,
-      body,
+      message,
+      date,
     }: {
+      pin: string;
       title: string;
-      body: string;
+      message: string;
+      date: string;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.addAnnouncement("786", title, body);
+      return actor.addAnnouncement(pin, title, message, date);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["announcements"] }),
   });
@@ -67,29 +90,9 @@ export function useDeleteAnnouncement() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: bigint) => {
+    mutationFn: async ({ pin, id }: { pin: string; id: bigint }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.deleteAnnouncement("786", id);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["announcements"] }),
-  });
-}
-
-export function useEditAnnouncement() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      id,
-      title,
-      body,
-    }: {
-      id: bigint;
-      title: string;
-      body: string;
-    }) => {
-      if (!actor) throw new Error("Actor not ready");
-      return actor.editAnnouncement("786", id, title, body);
+      return actor.deleteAnnouncement(pin, id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["announcements"] }),
   });
@@ -114,16 +117,18 @@ export function useAddCommitteeMember() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
+      pin,
       name,
       role,
       phoneNumber,
     }: {
+      pin: string;
       name: string;
       role: string;
       phoneNumber: string;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.addCommitteeMember("786", name, role, phoneNumber);
+      return actor.addCommitteeMember(pin, name, role, phoneNumber);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["committeeMembers"] }),
   });
@@ -133,31 +138,9 @@ export function useDeleteCommitteeMember() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: bigint) => {
+    mutationFn: async ({ pin, id }: { pin: string; id: bigint }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.deleteCommitteeMember("786", id);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["committeeMembers"] }),
-  });
-}
-
-export function useEditCommitteeMember() {
-  const { actor } = useActor();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      id,
-      name,
-      role,
-      phoneNumber,
-    }: {
-      id: bigint;
-      name: string;
-      role: string;
-      phoneNumber: string;
-    }) => {
-      if (!actor) throw new Error("Actor not ready");
-      return actor.editCommitteeMember("786", id, name, role, phoneNumber);
+      return actor.deleteCommitteeMember(pin, id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["committeeMembers"] }),
   });

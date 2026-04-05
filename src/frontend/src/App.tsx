@@ -163,13 +163,13 @@ function AdminSVG({ active }: { active: boolean }) {
 
 const TABS: { id: Tab; label: string; Icon: React.FC<{ active: boolean }> }[] =
   [
-    { id: "home", label: "होम", Icon: HomeSVG },
-    { id: "namaz", label: "नमाज़", Icon: MosqueSVG },
-    { id: "notice", label: "सूचना", Icon: BellSVG },
-    { id: "contact", label: "संपर्क", Icon: PhoneSVG },
-    { id: "map", label: "नक्शा", Icon: MapPinSVG },
-    { id: "people", label: "लोग", Icon: PeopleSVG },
-    { id: "admin", label: "एडमिन", Icon: AdminSVG },
+    { id: "home", label: "Home", Icon: HomeSVG },
+    { id: "namaz", label: "Namaz", Icon: MosqueSVG },
+    { id: "notice", label: "Notice", Icon: BellSVG },
+    { id: "contact", label: "Contact", Icon: PhoneSVG },
+    { id: "map", label: "Map", Icon: MapPinSVG },
+    { id: "people", label: "Log", Icon: PeopleSVG },
+    { id: "admin", label: "Admin", Icon: AdminSVG },
   ];
 
 export default function App() {
@@ -196,7 +196,7 @@ export default function App() {
             >
               <defs>
                 <pattern
-                  id="star"
+                  id="headerstar"
                   x="0"
                   y="0"
                   width="40"
@@ -210,18 +210,18 @@ export default function App() {
                   />
                 </pattern>
               </defs>
-              <rect width="100%" height="100%" fill="url(#star)" />
+              <rect width="100%" height="100%" fill="url(#headerstar)" />
             </svg>
           </div>
-          <div className="relative px-4 py-4 flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl" style={{ color: "#c9a84c" }}>
+          <div className="relative px-4 py-3 flex flex-col items-center">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xl" style={{ color: "#c9a84c" }}>
                 ☪
               </span>
-              <h1 className="text-white font-bold text-lg leading-tight tracking-wide text-center">
-                जामिया हुसैनिया मस्जिद मरगूबपुर
+              <h1 className="text-white font-bold text-base leading-tight tracking-wide text-center">
+                Jamia Husainiya Masjid Margoobpur
               </h1>
-              <span className="text-2xl" style={{ color: "#c9a84c" }}>
+              <span className="text-xl" style={{ color: "#c9a84c" }}>
                 ☪
               </span>
             </div>

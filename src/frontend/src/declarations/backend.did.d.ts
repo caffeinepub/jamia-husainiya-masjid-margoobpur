@@ -11,10 +11,9 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface Announcement {
-  'id' : bigint,
   'title' : string,
-  'body' : string,
-  'timestamp' : Time,
+  'date' : string,
+  'message' : string,
 }
 export interface CommitteeMember {
   'id' : bigint,
@@ -22,29 +21,28 @@ export interface CommitteeMember {
   'role' : string,
   'phoneNumber' : string,
 }
-export interface PrayerTime { 'name' : string, 'time' : string }
-export type Time = bigint;
+export interface PrayerTime {
+  'name' : string,
+  'time' : string,
+  'enable' : boolean,
+}
 export interface _SERVICE {
-  'addAnnouncement' : ActorMethod<[string, string, string], boolean>,
+  'addAnnouncement' : ActorMethod<[string, string, string, string], boolean>,
   'addCommitteeMember' : ActorMethod<[string, string, string, string], boolean>,
   'deleteAnnouncement' : ActorMethod<[string, bigint], boolean>,
   'deleteCommitteeMember' : ActorMethod<[string, bigint], boolean>,
-  'editAnnouncement' : ActorMethod<[string, bigint, string, string], boolean>,
-  'editCommitteeMember' : ActorMethod<
-    [string, bigint, string, string, string],
-    boolean
-  >,
+  'getAllPrayerTimes' : ActorMethod<[], Array<PrayerTime>>,
+  'getAnnouncement' : ActorMethod<[bigint], [] | [Announcement]>,
   'getAnnouncements' : ActorMethod<[], Array<Announcement>>,
-  'getAnnouncementsSortedByTime' : ActorMethod<[], Array<Announcement>>,
   'getCommitteeMembers' : ActorMethod<[], Array<CommitteeMember>>,
-  'getCommitteeMembersSortedByRole' : ActorMethod<[], Array<CommitteeMember>>,
-  'getPrayerTimes' : ActorMethod<[], Array<PrayerTime>>,
-  'getPrayerTimesSorted' : ActorMethod<[], Array<PrayerTime>>,
+  'getPrayerTime' : ActorMethod<[string], [] | [PrayerTime]>,
+  'getSortedPrayerTimes' : ActorMethod<[], Array<PrayerTime>>,
+  'togglePrayerTime' : ActorMethod<[string, string, boolean], boolean>,
   'updateMultiplePrayerTimes' : ActorMethod<
     [string, Array<[string, string]>],
     boolean
   >,
-  'updatePrayerTime' : ActorMethod<[string, string, string], boolean>,
+  'updatePrayerTime' : ActorMethod<[string, PrayerTime], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
