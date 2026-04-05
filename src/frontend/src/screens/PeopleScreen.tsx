@@ -6,10 +6,15 @@ export function PeopleScreen() {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="px-4 py-4" style={{ background: "#1a6b3a" }}>
-        <div className="text-white font-bold text-base">👥 Masjid ke Log</div>
+      <div
+        className="px-4 py-4"
+        style={{
+          background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
+        }}
+      >
+        <div className="text-white font-bold text-base">👥 Log / People</div>
         <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-          Committee members aur staff
+          Masjid Committee members
         </div>
       </div>
 
@@ -27,7 +32,7 @@ export function PeopleScreen() {
         ) : members.length === 0 ? (
           <div
             className="rounded-2xl p-8 flex flex-col items-center gap-3 text-center"
-            style={{ background: "white" }}
+            style={{ background: "white", border: "1px solid #e8f5e9" }}
             data-ocid="people.empty_state"
           >
             <span className="text-4xl">👤</span>
@@ -43,15 +48,19 @@ export function PeopleScreen() {
             {members.map((member, i) => (
               <div
                 key={String(member.id)}
-                className="rounded-2xl overflow-hidden shadow-card"
-                style={{ background: "white", border: "1px solid #e8f5e9" }}
+                className="rounded-2xl overflow-hidden"
+                style={{
+                  background: "white",
+                  border: "1px solid #e8f5e9",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                }}
                 data-ocid={`people.member.item.${i + 1}`}
               >
                 <div className="flex items-center p-4 gap-4">
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-white text-xl flex-shrink-0"
                     style={{
-                      background: `hsl(${(i * 47) % 360}, 50%, 30%)`,
+                      background: `hsl(${(i * 47 + 140) % 360}, 50%, 30%)`,
                     }}
                   >
                     {member.name.charAt(0).toUpperCase()}

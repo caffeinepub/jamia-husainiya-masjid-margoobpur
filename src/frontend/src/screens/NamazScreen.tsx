@@ -15,6 +15,17 @@ const DISPLAY_NAMES: Record<string, string> = {
   maghrib: "Maghrib",
   isha: "Isha",
   khutba_juma: "Khutba Juma",
+  juma: "Juma",
+};
+
+const HINDI_NAMES: Record<string, string> = {
+  fajr: "फ़ज्र",
+  zuhr: "ज़ोहर",
+  asr: "अस्र",
+  maghrib: "मग़रिब",
+  isha: "इशा",
+  khutba_juma: "खुत्बा जुमा",
+  juma: "जुमा",
 };
 
 export function NamazScreen() {
@@ -102,24 +113,37 @@ export function NamazScreen() {
     prayer: { name: string; time: string; enable: boolean },
     index: number,
     isDimmed = false,
+    isJumaHighlight = false,
   ) => {
-    const isCurrent = prayer.name === currentPrayerName && !isDimmed;
+    const isCurrent =
+      prayer.name === currentPrayerName && !isDimmed && !isJumaHighlight;
     const isUpcoming =
       !isDimmed &&
+      !isJumaHighlight &&
       prayer.name !== currentPrayerName &&
       parseTime(prayer.time) > currentMinutes;
     const displayName = DISPLAY_NAMES[prayer.name] || prayer.name;
+    const hindiName = HINDI_NAMES[prayer.name] || "";
 
     return (
       <div
         key={prayer.name}
-        className="rounded-xl overflow-hidden shadow-xs"
+        className="rounded-xl overflow-hidden"
         style={{
-          background: isCurrent ? "#1a6b3a" : isDimmed ? "#f5f5f5" : "white",
+          background: isJumaHighlight
+            ? "#1a6b3a"
+            : isCurrent
+              ? "#1a6b3a"
+              : isDimmed
+                ? "#f5f5f5"
+                : "white",
           opacity: isDimmed ? 0.6 : 1,
-          border: isCurrent
-            ? "none"
-            : `1px solid ${isDimmed ? "#e0e0e0" : "#e8f5e9"}`,
+          border: isJumaHighlight
+            ? "2px solid #c9a84c"
+            : isCurrent
+              ? "2px solid #c9a84c"
+              : `1px solid ${isDimmed ? "#e0e0e0" : "#e8f5e9"}`,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
         }}
         data-ocid={`namaz.item.${index + 1}`}
       >
@@ -127,11 +151,12 @@ export function NamazScreen() {
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
             style={{
-              background: isCurrent
-                ? "rgba(201,168,76,0.25)"
-                : isDimmed
-                  ? "#ececec"
-                  : "#e8f5e9",
+              background:
+                isJumaHighlight || isCurrent
+                  ? "rgba(201,168,76,0.25)"
+                  : isDimmed
+                    ? "#ececec"
+                    : "#e8f5e9",
             }}
           >
             🕌
@@ -140,25 +165,54 @@ export function NamazScreen() {
             <div
               className="font-bold text-sm"
               style={{
-                color: isCurrent ? "white" : isDimmed ? "#999" : "#0f4a29",
+                color:
+                  isJumaHighlight || isCurrent
+                    ? "white"
+                    : isDimmed
+                      ? "#999"
+                      : "#0f4a29",
               }}
             >
               {displayName}
             </div>
+            {hindiName && (
+              <div
+                className="text-xs"
+                style={{
+                  color:
+                    isJumaHighlight || isCurrent
+                      ? "rgba(255,255,255,0.7)"
+                      : isDimmed
+                        ? "#bbb"
+                        : "#888",
+                }}
+              >
+                {hindiName}
+              </div>
+            )}
             <div
-              className="text-xs"
+              className="text-xs font-semibold mt-0.5"
               style={{
-                color: isCurrent
-                  ? "rgba(255,255,255,0.8)"
-                  : isDimmed
-                    ? "#bbb"
-                    : "#555",
+                color:
+                  isJumaHighlight || isCurrent
+                    ? "rgba(255,255,255,0.9)"
+                    : isDimmed
+                      ? "#aaa"
+                      : "#444",
               }}
             >
               {prayer.time}
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isJumaHighlight && (
+              <span
+                className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: "#c9a84c", color: "#0f4a29" }}
+              >
+                आज Juma! 🕌
+              </span>
+            )}
             {isCurrent && (
               <span
                 className="text-xs font-bold px-2 py-0.5 rounded-full"
@@ -206,7 +260,7 @@ export function NamazScreen() {
               🔔 Namaz ka waqt ho gaya!
             </div>
             <div className="text-xs" style={{ color: "rgba(255,255,255,0.8)" }}>
-              {formatCountdown(bellSecondsLeft)} mein band ho jayegi
+              Bell {formatCountdown(bellSecondsLeft)} mein band ho jayegi
             </div>
           </div>
           <button
@@ -246,24 +300,33 @@ export function NamazScreen() {
       </div>
 
       <div className="p-4 flex flex-col gap-4">
-        {/* Alarm Setup Section */}
+        {/* ===== Alarm Setup Section ===== */}
         <div
-          className="rounded-2xl overflow-hidden shadow-card"
-          style={{ background: "white", border: "1px solid #e8f5e9" }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: "white",
+            border: "1px solid #e8f5e9",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          }}
         >
           <div
             className="px-4 py-3"
-            style={{ background: "#e8f5e9", borderBottom: "1px solid #c8e6c9" }}
+            style={{
+              background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
+            }}
           >
-            <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
+            <div className="font-bold text-sm text-white">
               📱 Namaz Alarm Setup
             </div>
-            <div className="text-xs mt-0.5" style={{ color: "#555" }}>
+            <div
+              className="text-xs mt-0.5"
+              style={{ color: "rgba(255,255,255,0.8)" }}
+            >
               Android mein Clock app kholkar alarm set karo
             </div>
           </div>
           <div className="p-4 flex flex-col gap-2">
-            <p className="text-xs" style={{ color: "#555" }}>
+            <p className="text-xs mb-1" style={{ color: "#555" }}>
               Neeche diye button dabao — Clock app khulega aur alarm
               automatically set ho jayega.
             </p>
@@ -283,14 +346,20 @@ export function NamazScreen() {
                   )
                 }
                 className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm text-left"
-                style={{ background: "#1a6b3a", color: "white" }}
+                style={{
+                  background: "#1a6b3a",
+                  color: "white",
+                  border: "none",
+                }}
                 data-ocid={`namaz.alarm_${key}.button`}
               >
-                <span className="text-base">🔔</span>
-                <span>{alarm.displayName} Alarm Set karo</span>
+                <span className="text-base flex-shrink-0">🔔</span>
+                <span className="flex-1">
+                  {alarm.displayName} Alarm Set karo
+                </span>
                 <span
-                  className="ml-auto text-xs font-normal"
-                  style={{ color: "rgba(255,255,255,0.7)" }}
+                  className="text-xs font-normal flex-shrink-0"
+                  style={{ color: "rgba(255,255,255,0.75)" }}
                 >
                   {alarm.time}
                 </span>
@@ -303,7 +372,7 @@ export function NamazScreen() {
           </div>
         </div>
 
-        {/* Prayer Times List */}
+        {/* ===== Prayer Times List ===== */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
@@ -314,7 +383,7 @@ export function NamazScreen() {
                 className="text-xs font-bold px-2 py-1 rounded-full"
                 style={{ background: "#c9a84c", color: "#0f4a29" }}
               >
-                Aaj Juma Hai! 🕌
+                आज Juma Hai! 🕌
               </span>
             )}
           </div>
@@ -334,48 +403,25 @@ export function NamazScreen() {
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {/* Friday: Juma card at top */}
-              {isFriday && jumaPrayer && (
-                <div
-                  className="rounded-xl overflow-hidden shadow-xs"
-                  style={{ background: "#1a6b3a", border: "2px solid #c9a84c" }}
-                  data-ocid="namaz.juma.card"
-                >
-                  <div className="flex items-center px-4 py-3 gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
-                      style={{ background: "rgba(201,168,76,0.25)" }}
-                    >
-                      🕌
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-bold text-sm text-white">
-                        Khutba Juma
-                      </div>
-                      <div
-                        className="text-xs"
-                        style={{ color: "rgba(255,255,255,0.8)" }}
-                      >
-                        {jumaPrayer.time}
-                      </div>
-                    </div>
-                    <span
-                      className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: "#c9a84c", color: "#0f4a29" }}
-                    >
-                      Aaj Juma! 🕌
-                    </span>
-                  </div>
-                </div>
-              )}
+              {/* Friday: Juma card at top with gold border */}
+              {isFriday &&
+                jumaPrayer &&
+                renderPrayerCard(jumaPrayer, 0, false, true)}
 
               {/* Regular prayers */}
-              {regularPrayers.map((prayer, i) => renderPrayerCard(prayer, i))}
+              {regularPrayers.map((prayer, i) =>
+                renderPrayerCard(prayer, isFriday ? i + 1 : i),
+              )}
 
               {/* Non-Friday: Juma card at bottom, dimmed */}
               {!isFriday &&
                 jumaPrayer &&
-                renderPrayerCard(jumaPrayer, regularPrayers.length, true)}
+                renderPrayerCard(
+                  jumaPrayer,
+                  regularPrayers.length,
+                  true,
+                  false,
+                )}
             </div>
           )}
         </div>

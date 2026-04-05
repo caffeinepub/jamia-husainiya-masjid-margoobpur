@@ -168,7 +168,7 @@ const TABS: { id: Tab; label: string; Icon: React.FC<{ active: boolean }> }[] =
     { id: "notice", label: "Notice", Icon: BellSVG },
     { id: "contact", label: "Contact", Icon: PhoneSVG },
     { id: "map", label: "Map", Icon: MapPinSVG },
-    { id: "people", label: "Log", Icon: PeopleSVG },
+    { id: "people", label: "लोग", Icon: PeopleSVG },
     { id: "admin", label: "Admin", Icon: AdminSVG },
   ];
 
@@ -178,66 +178,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#d8ead8] flex items-center justify-center">
       <div className="w-full max-w-[430px] min-h-screen bg-[#f0f7f0] relative flex flex-col shadow-2xl overflow-hidden">
-        {/* Header */}
-        <header
-          className="relative z-10 flex-shrink-0"
-          style={{ background: "#1a6b3c" }}
-        >
-          <div
-            className="absolute inset-0 opacity-10 pointer-events-none"
-            aria-hidden="true"
-          >
-            <svg
-              role="img"
-              aria-label="decorative pattern"
-              width="100%"
-              height="100%"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <pattern
-                  id="headerstar"
-                  x="0"
-                  y="0"
-                  width="40"
-                  height="40"
-                  patternUnits="userSpaceOnUse"
-                >
-                  <polygon
-                    points="20,2 24,14 36,14 26,22 30,34 20,26 10,34 14,22 4,14 16,14"
-                    fill="white"
-                    fillOpacity="0.4"
-                  />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#headerstar)" />
-            </svg>
-          </div>
-          <div className="relative px-4 py-3 flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-xl" style={{ color: "#c9a84c" }}>
-                ☪
-              </span>
-              <h1 className="text-white font-bold text-base leading-tight tracking-wide text-center">
-                Jamia Husainiya Masjid Margoobpur
-              </h1>
-              <span className="text-xl" style={{ color: "#c9a84c" }}>
-                ☪
-              </span>
-            </div>
-            <p
-              className="text-xs font-medium"
-              style={{
-                color: "#c9a84c",
-                fontFamily: "serif",
-                letterSpacing: "0.1em",
-              }}
-            >
-              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-            </p>
-          </div>
-        </header>
-
         {/* Scrollable content */}
         <main className="flex-1 overflow-y-auto pb-20">
           {activeTab === "home" && <HomeScreen onTabChange={setActiveTab} />}

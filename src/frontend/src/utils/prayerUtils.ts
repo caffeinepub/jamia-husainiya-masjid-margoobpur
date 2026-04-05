@@ -56,6 +56,19 @@ export function getCurrentPrayer(prayers: PrayerInfo[]): string | null {
   return current;
 }
 
+export function getNextPrayer(prayers: PrayerInfo[]): PrayerInfo | null {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const sorted = [...prayers]
+    .filter((p) => p.enable && p.name !== "khutba_juma" && p.name !== "juma")
+    .sort((a, b) => parseTime(a.time) - parseTime(b.time));
+
+  return (
+    sorted.find((p) => parseTime(p.time) > currentMinutes) || sorted[0] || null
+  );
+}
+
 export function isAndroid(): boolean {
   return /android/i.test(navigator.userAgent);
 }
@@ -73,38 +86,42 @@ export function launchAndroidAlarm(intentUrl: string, fallbackMsg: string) {
   }
 }
 
+export function buildAlarmIntent(
+  prayerName: string,
+  hour: number,
+  minute: number,
+): string {
+  const encodedName = encodeURIComponent(`${prayerName} Namaz`);
+  return `intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=${encodedName};i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};end`;
+}
+
 export const ALARM_INTENTS = {
   fajr: {
-    intent:
-      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Fajr%20Namaz;i.android.intent.extra.alarm.HOUR=5;i.android.intent.extra.alarm.MINUTES=41;end",
+    intent: buildAlarmIntent("Fajr", 5, 41),
     label: "Fajr (5:41 AM)",
     displayName: "Fajr",
     time: "5:41 AM",
   },
   zuhr: {
-    intent:
-      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Zuhr%20Namaz;i.android.intent.extra.alarm.HOUR=13;i.android.intent.extra.alarm.MINUTES=30;end",
+    intent: buildAlarmIntent("Zuhr", 13, 30),
     label: "Zuhr (1:30 PM)",
     displayName: "Zuhr",
     time: "1:30 PM",
   },
   asr: {
-    intent:
-      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Asr%20Namaz;i.android.intent.extra.alarm.HOUR=17;i.android.intent.extra.alarm.MINUTES=0;end",
+    intent: buildAlarmIntent("Asr", 17, 0),
     label: "Asr (5:00 PM)",
     displayName: "Asr",
     time: "5:00 PM",
   },
   maghrib: {
-    intent:
-      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Maghrib%20Namaz;i.android.intent.extra.alarm.HOUR=18;i.android.intent.extra.alarm.MINUTES=45;end",
+    intent: buildAlarmIntent("Maghrib", 18, 45),
     label: "Maghrib (6:45 PM)",
     displayName: "Maghrib",
     time: "6:45 PM",
   },
   isha: {
-    intent:
-      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Isha%20Namaz;i.android.intent.extra.alarm.HOUR=20;i.android.intent.extra.alarm.MINUTES=30;end",
+    intent: buildAlarmIntent("Isha", 20, 30),
     label: "Isha (8:30 PM)",
     displayName: "Isha",
     time: "8:30 PM",

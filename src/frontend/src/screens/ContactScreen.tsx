@@ -74,8 +74,15 @@ export function ContactScreen() {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="px-4 py-4" style={{ background: "#1a6b3a" }}>
-        <div className="text-white font-bold text-base">📞 Humse Milein</div>
+      <div
+        className="px-4 py-4"
+        style={{
+          background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
+        }}
+      >
+        <div className="text-white font-bold text-base">
+          📞 Contact / Sampark
+        </div>
         <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
           Masjid se contact karo
         </div>
@@ -84,8 +91,12 @@ export function ContactScreen() {
       <div className="p-4 flex flex-col gap-4">
         {/* Main contact card */}
         <div
-          className="rounded-2xl overflow-hidden shadow-card"
-          style={{ background: "white", border: "1px solid #e8f5e9" }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: "white",
+            border: "1px solid #e8f5e9",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          }}
         >
           <div className="px-4 py-3" style={{ background: "#e8f5e9" }}>
             <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
@@ -142,8 +153,12 @@ export function ContactScreen() {
           {/* Add Form */}
           {showAddForm && (
             <div
-              className="rounded-xl overflow-hidden mb-3 shadow-card"
-              style={{ background: "white", border: "1px solid #e8f5e9" }}
+              className="rounded-xl overflow-hidden mb-3"
+              style={{
+                background: "white",
+                border: "1px solid #e8f5e9",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              }}
               data-ocid="contact.add_member.modal"
             >
               <div className="px-4 py-2" style={{ background: "#e8f5e9" }}>
@@ -165,7 +180,7 @@ export function ContactScreen() {
                       className="text-xs font-semibold"
                       style={{ color: "#555" }}
                     >
-                      Admin PIN dalo
+                      Admin PIN dalo (786)
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -256,8 +271,12 @@ export function ContactScreen() {
           {/* Delete PIN prompt */}
           {deletingId !== null && (
             <div
-              className="rounded-xl p-4 mb-3 shadow-card"
-              style={{ background: "white", border: "1px solid #ffcdd2" }}
+              className="rounded-xl p-4 mb-3"
+              style={{
+                background: "white",
+                border: "1px solid #ffcdd2",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              }}
               data-ocid="contact.delete_confirm.dialog"
             >
               <div
@@ -324,7 +343,8 @@ export function ContactScreen() {
               data-ocid="contact.members.empty_state"
             >
               <div className="text-sm" style={{ color: "#888" }}>
-                Abhi koi member nahi. "+ Member Add karo" se add karein.
+                Abhi koi member nahi. &quot;+ Member Add karo&quot; se add
+                karein.
               </div>
             </div>
           ) : (
@@ -332,8 +352,12 @@ export function ContactScreen() {
               {members.map((member, i) => (
                 <div
                   key={String(member.id)}
-                  className="rounded-xl overflow-hidden shadow-xs"
-                  style={{ background: "white", border: "1px solid #e8f5e9" }}
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    background: "white",
+                    border: "1px solid #e8f5e9",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
                   data-ocid={`contact.member.item.${i + 1}`}
                 >
                   <div className="flex items-center px-4 py-3 gap-3">
@@ -352,6 +376,12 @@ export function ContactScreen() {
                       </div>
                       <div className="text-xs" style={{ color: "#888" }}>
                         {member.role}
+                      </div>
+                      <div
+                        className="text-xs mt-0.5"
+                        style={{ color: "#1a6b3a" }}
+                      >
+                        📞 {member.phoneNumber}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

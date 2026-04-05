@@ -6,10 +6,15 @@ export function NoticeScreen() {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="px-4 py-4" style={{ background: "#1a6b3a" }}>
+      <div
+        className="px-4 py-4"
+        style={{
+          background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
+        }}
+      >
         <div className="text-white font-bold text-base">📢 Notice Board</div>
         <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-          Masjid ki taaza khabren
+          Masjid ki taaza khabren / Notices
         </div>
       </div>
 
@@ -27,7 +32,7 @@ export function NoticeScreen() {
         ) : announcements.length === 0 ? (
           <div
             className="rounded-2xl p-8 flex flex-col items-center gap-3 text-center"
-            style={{ background: "white" }}
+            style={{ background: "white", border: "1px solid #e8f5e9" }}
             data-ocid="notice.empty_state"
           >
             <span className="text-4xl">📭</span>
@@ -43,8 +48,12 @@ export function NoticeScreen() {
           announcements.map((notice, i) => (
             <div
               key={`${notice.title}-${notice.date}`}
-              className="rounded-xl overflow-hidden shadow-card"
-              style={{ background: "white", border: "1px solid #e8f5e9" }}
+              className="rounded-xl overflow-hidden"
+              style={{
+                background: "white",
+                border: "1px solid #e8f5e9",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              }}
               data-ocid={`notice.item.${i + 1}`}
             >
               <div

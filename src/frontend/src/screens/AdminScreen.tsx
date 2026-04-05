@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { PrayerTime } from "../backend.d";
 import {
   useAddAnnouncement,
   useAnnouncements,
@@ -18,6 +17,7 @@ const PRAYER_DISPLAY_NAMES: Record<string, string> = {
   maghrib: "Maghrib",
   isha: "Isha",
   khutba_juma: "Khutba Juma",
+  juma: "Juma",
 };
 
 export function AdminScreen() {
@@ -31,6 +31,7 @@ export function AdminScreen() {
   const { data: prayers = [] } = usePrayerTimes();
   const updatePrayerTimes = useUpdateMultiplePrayerTimes();
   const [editedTimes, setEditedTimes] = useState<Record<string, string>>({});
+  const [saveMsg, setSaveMsg] = useState("");
 
   // Announcements
   const { data: announcements = [] } = useAnnouncements();
@@ -65,10 +66,14 @@ export function AdminScreen() {
       { pin: ADMIN_PIN, times: updates },
       {
         onSuccess: () => {
-          alert("Prayer times update ho gaye!");
+          setSaveMsg("✅ Prayer times update ho gaye!");
           setEditedTimes({});
+          setTimeout(() => setSaveMsg(""), 3000);
         },
-        onError: () => alert("Kuch problem ho gayi. Dobara try karo."),
+        onError: () => {
+          setSaveMsg("❌ Problem ho gayi. Dobara try karo.");
+          setTimeout(() => setSaveMsg(""), 3000);
+        },
       },
     );
   }
@@ -91,7 +96,6 @@ export function AdminScreen() {
           setNoticeTitle("");
           setNoticeMessage("");
           setNoticeDate("");
-          alert("Notice add ho gaya!");
         },
         onError: () => alert("Problem ho gayi. Dobara try karo."),
       },
@@ -99,14 +103,9 @@ export function AdminScreen() {
   }
 
   function handleDeleteNotice(idx: number) {
-    const notice = announcements[idx];
-    if (!notice) return;
-    // Note: backend uses id but Announcement type doesn't have id, using index as workaround
-    // We'll use addAnnouncement/delete pattern — delete by title match using BigInt index
     deleteAnnouncement.mutate(
       { pin: ADMIN_PIN, id: BigInt(idx) },
       {
-        onSuccess: () => alert("Notice delete ho gaya!"),
         onError: () => alert("Problem ho gayi."),
       },
     );
@@ -115,14 +114,19 @@ export function AdminScreen() {
   if (!unlocked) {
     return (
       <div className="flex flex-col">
-        <div className="px-4 py-4" style={{ background: "#1a6b3a" }}>
+        <div
+          className="px-4 py-4"
+          style={{
+            background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
+          }}
+        >
           <div className="text-white font-bold text-base">🔒 Admin Panel</div>
           <div className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
             Sirf admin ke liye
           </div>
         </div>
         <div className="p-6 flex flex-col items-center gap-6">
-          <div className="text-5xl">🔐</div>
+          <div className="text-5xl mt-4">🔐</div>
           <div className="text-center">
             <div className="font-bold text-lg" style={{ color: "#0f4a29" }}>
               Admin Login
@@ -141,7 +145,7 @@ export function AdminScreen() {
               onChange={(e) => setPin(e.target.value)}
               placeholder="Admin PIN dalo"
               className="w-full px-4 py-3 rounded-xl border text-center text-lg tracking-widest"
-              style={{ borderColor: "#c8e6c9" }}
+              style={{ borderColor: "#c8e6c9", outline: "none" }}
               data-ocid="admin.pin.input"
             />
             <button
@@ -163,7 +167,9 @@ export function AdminScreen() {
       {/* Header */}
       <div
         className="px-4 py-3 flex items-center justify-between"
-        style={{ background: "#1a6b3a" }}
+        style={{
+          background: "linear-gradient(90deg, #0f4a29 0%, #1a6b3a 100%)",
+        }}
       >
         <div>
           <div className="text-white font-bold text-base">⚙️ Admin Panel</div>
@@ -221,11 +227,27 @@ export function AdminScreen() {
             <div className="font-bold text-sm" style={{ color: "#0f4a29" }}>
               Prayer Times Edit karo
             </div>
+            {saveMsg && (
+              <div
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-center"
+                style={{
+                  background: saveMsg.startsWith("✅") ? "#e8f5e9" : "#ffebee",
+                  color: saveMsg.startsWith("✅") ? "#1a6b3a" : "#c0392b",
+                }}
+                data-ocid="admin.save_prayer_times.success_state"
+              >
+                {saveMsg}
+              </div>
+            )}
             {prayers.map((prayer) => (
               <div
                 key={prayer.name}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xs"
-                style={{ background: "white", border: "1px solid #e8f5e9" }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                style={{
+                  background: "white",
+                  border: "1px solid #e8f5e9",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                }}
               >
                 <div className="flex-1">
                   <div
@@ -235,7 +257,7 @@ export function AdminScreen() {
                     {PRAYER_DISPLAY_NAMES[prayer.name] || prayer.name}
                   </div>
                   <div className="text-xs" style={{ color: "#888" }}>
-                    Current: {prayer.time}
+                    Abhi: {prayer.time}
                   </div>
                 </div>
                 <input
@@ -249,7 +271,7 @@ export function AdminScreen() {
                   }
                   placeholder={prayer.time}
                   className="w-28 px-2 py-1.5 rounded-lg border text-sm text-center"
-                  style={{ borderColor: "#c8e6c9" }}
+                  style={{ borderColor: "#c8e6c9", outline: "none" }}
                   data-ocid={`admin.prayer_${prayer.name}.input`}
                 />
               </div>
@@ -259,7 +281,11 @@ export function AdminScreen() {
               onClick={handleSavePrayerTimes}
               disabled={updatePrayerTimes.isPending}
               className="w-full py-3 rounded-xl font-bold"
-              style={{ background: "#1a6b3a", color: "white" }}
+              style={{
+                background: "#1a6b3a",
+                color: "white",
+                opacity: updatePrayerTimes.isPending ? 0.7 : 1,
+              }}
               data-ocid="admin.save_prayer_times.button"
             >
               {updatePrayerTimes.isPending
@@ -274,8 +300,12 @@ export function AdminScreen() {
           <div className="flex flex-col gap-4">
             {/* Add Notice Form */}
             <div
-              className="rounded-xl overflow-hidden shadow-card"
-              style={{ background: "white", border: "1px solid #e8f5e9" }}
+              className="rounded-xl overflow-hidden"
+              style={{
+                background: "white",
+                border: "1px solid #e8f5e9",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              }}
             >
               <div className="px-4 py-2" style={{ background: "#e8f5e9" }}>
                 <span
@@ -295,7 +325,7 @@ export function AdminScreen() {
                   onChange={(e) => setNoticeTitle(e.target.value)}
                   placeholder="Notice Title"
                   className="px-3 py-2 rounded-lg border text-sm"
-                  style={{ borderColor: "#c8e6c9" }}
+                  style={{ borderColor: "#c8e6c9", outline: "none" }}
                   data-ocid="admin.notice_title.input"
                 />
                 <input
@@ -304,7 +334,7 @@ export function AdminScreen() {
                   onChange={(e) => setNoticeDate(e.target.value)}
                   placeholder="Date (jaise: 5 April 2026)"
                   className="px-3 py-2 rounded-lg border text-sm"
-                  style={{ borderColor: "#c8e6c9" }}
+                  style={{ borderColor: "#c8e6c9", outline: "none" }}
                   data-ocid="admin.notice_date.input"
                 />
                 <textarea
@@ -313,14 +343,18 @@ export function AdminScreen() {
                   placeholder="Notice Message likhein..."
                   rows={3}
                   className="px-3 py-2 rounded-lg border text-sm resize-none"
-                  style={{ borderColor: "#c8e6c9" }}
+                  style={{ borderColor: "#c8e6c9", outline: "none" }}
                   data-ocid="admin.notice_message.textarea"
                 />
                 <button
                   type="submit"
                   disabled={addAnnouncement.isPending}
                   className="py-2.5 rounded-xl font-bold text-sm"
-                  style={{ background: "#1a6b3a", color: "white" }}
+                  style={{
+                    background: "#1a6b3a",
+                    color: "white",
+                    opacity: addAnnouncement.isPending ? 0.7 : 1,
+                  }}
                   data-ocid="admin.add_notice.submit_button"
                 >
                   {addAnnouncement.isPending
@@ -348,8 +382,12 @@ export function AdminScreen() {
               announcements.map((notice, i) => (
                 <div
                   key={`${notice.title}-${i}`}
-                  className="rounded-xl overflow-hidden shadow-xs"
-                  style={{ background: "white", border: "1px solid #e8f5e9" }}
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    background: "white",
+                    border: "1px solid #e8f5e9",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
                   data-ocid={`admin.notice.item.${i + 1}`}
                 >
                   <div
@@ -406,10 +444,20 @@ export function AdminScreen() {
               members.map((member, i) => (
                 <div
                   key={String(member.id)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xs"
-                  style={{ background: "white", border: "1px solid #e8f5e9" }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                  style={{
+                    background: "white",
+                    border: "1px solid #e8f5e9",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
                   data-ocid={`admin.member.item.${i + 1}`}
                 >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
+                    style={{ background: "#1a6b3a" }}
+                  >
+                    {member.name.charAt(0).toUpperCase()}
+                  </div>
                   <div className="flex-1">
                     <div
                       className="font-semibold text-sm"

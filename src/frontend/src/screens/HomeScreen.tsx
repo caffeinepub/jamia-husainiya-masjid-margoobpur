@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Tab } from "../App";
 import { usePrayerTimes } from "../hooks/useQueries";
+import { isBellRinging, startBell, stopBell } from "../utils/bellAudio";
 import { getCurrentPrayer, parseTime } from "../utils/prayerUtils";
 
 interface Props {
@@ -14,6 +15,7 @@ const DISPLAY_NAMES: Record<string, string> = {
   maghrib: "Maghrib",
   isha: "Isha",
   khutba_juma: "Khutba Juma",
+  juma: "Juma",
 };
 
 const ARABIC_NAMES: Record<string, string> = {
@@ -23,16 +25,77 @@ const ARABIC_NAMES: Record<string, string> = {
   maghrib: "المغرب",
   isha: "العشاء",
   khutba_juma: "خطبة الجمعة",
+  juma: "الجمعة",
 };
 
 export function HomeScreen({ onTabChange }: Props) {
   const [now, setNow] = useState(new Date());
   const { data: prayers = [] } = usePrayerTimes();
+  const [bellActive, setBellActive] = useState(isBellRinging());
+  const [bellSecondsLeft, setBellSecondsLeft] = useState(15 * 60);
+  const bellTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevPrayerRef = useRef<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Auto-trigger bell at prayer time
+  useEffect(() => {
+    if (!prayers.length) return;
+    const regularPrayers = prayers.filter(
+      (p) => p.enable && p.name !== "khutba_juma" && p.name !== "juma",
+    );
+    const currentPrayer = getCurrentPrayer(
+      regularPrayers.map((p) => ({ ...p, displayName: p.name, isJuma: false })),
+    );
+    if (currentPrayer && currentPrayer !== prevPrayerRef.current) {
+      prevPrayerRef.current = currentPrayer;
+      if (!bellActive) {
+        triggerBell();
+      }
+    }
+  });
+
+  function triggerBell() {
+    setBellActive(true);
+    setBellSecondsLeft(15 * 60);
+    startBell(() => {
+      setBellActive(false);
+      if (bellTimerRef.current) {
+        clearInterval(bellTimerRef.current);
+        bellTimerRef.current = null;
+      }
+    });
+    if (bellTimerRef.current) clearInterval(bellTimerRef.current);
+    bellTimerRef.current = setInterval(() => {
+      setBellSecondsLeft((prev) => {
+        if (prev <= 1) {
+          if (bellTimerRef.current) clearInterval(bellTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }
+
+  function handleStopBell() {
+    stopBell();
+    setBellActive(false);
+    if (bellTimerRef.current) {
+      clearInterval(bellTimerRef.current);
+      bellTimerRef.current = null;
+    }
+  }
+
+  const formatCountdown = (secs: number) => {
+    const m = Math.floor(secs / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (secs % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   const isFriday = now.getDay() === 5;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -45,34 +108,56 @@ export function HomeScreen({ onTabChange }: Props) {
     regularPrayers.find((p) => parseTime(p.time) > currentMinutes) ||
     regularPrayers[0];
 
-  const currentPrayerName = getCurrentPrayer(
-    regularPrayers.map((p) => ({ ...p, displayName: p.name, isJuma: false })),
-  );
-
-  // How soon is next prayer (in minutes)
   const minsUntilNext = nextPrayer
     ? parseTime(nextPrayer.time) - currentMinutes
     : null;
   const soonLabel =
     minsUntilNext !== null && minsUntilNext <= 30 && minsUntilNext >= 0
       ? "Soon"
-      : minsUntilNext !== null && minsUntilNext < 0
-        ? "Coming up"
-        : "";
+      : null;
 
   return (
     <div className="flex flex-col">
-      {/* Hero Islamic Banner */}
+      {/* Bell Banner */}
+      {bellActive && (
+        <div
+          className="flex items-center justify-between px-4 py-3 gap-2"
+          style={{ background: "#c0392b" }}
+          data-ocid="home.bell_banner.panel"
+        >
+          <div>
+            <div className="text-white font-bold text-sm">
+              🔔 Namaz ka waqt ho gaya!
+            </div>
+            <div className="text-xs" style={{ color: "rgba(255,255,255,0.8)" }}>
+              Bell {formatCountdown(bellSecondsLeft)} mein band ho jayegi
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleStopBell}
+            className="text-xs font-bold px-3 py-2 rounded-lg flex-shrink-0"
+            style={{ background: "white", color: "#c0392b" }}
+            data-ocid="home.bell_stop.button"
+          >
+            ✅ Masjid pahunch gaya — Bell band karo
+          </button>
+        </div>
+      )}
+
+      {/* Header */}
       <div
-        className="relative overflow-hidden flex flex-col items-center justify-center py-8 px-4"
+        className="relative overflow-hidden"
         style={{
           background:
             "linear-gradient(160deg, #0a3d1e 0%, #1a6b3a 60%, #0f4a29 100%)",
-          minHeight: 220,
         }}
       >
         {/* Decorative star pattern */}
-        <div className="absolute inset-0 opacity-10" aria-hidden="true">
+        <div
+          className="absolute inset-0 opacity-10 pointer-events-none"
+          aria-hidden="true"
+        >
           <svg
             role="img"
             aria-label="Decorative pattern"
@@ -101,45 +186,61 @@ export function HomeScreen({ onTabChange }: Props) {
           </svg>
         </div>
 
-        {/* Masjid name with crescents on both sides */}
-        <div className="relative z-10 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-2xl" style={{ color: "#c9a84c" }}>
+        {/* App title bar */}
+        <div className="relative px-4 pt-4 pb-0 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl" style={{ color: "#c9a84c" }}>
               ☪
             </span>
-            <h2
-              className="font-bold text-white text-base leading-tight"
-              style={{ letterSpacing: "0.03em" }}
-            >
+            <h1 className="text-white font-bold text-sm leading-tight tracking-wide">
               Jamia Husainiya Masjid Margoobpur
-            </h2>
-            <span className="text-2xl" style={{ color: "#c9a84c" }}>
+            </h1>
+            <span className="text-xl" style={{ color: "#c9a84c" }}>
               ☪
             </span>
           </div>
-
-          {/* Bismillah */}
-          <div
-            className="text-lg mb-4"
-            style={{ color: "#c9a84c", fontFamily: "serif" }}
+          <button
+            type="button"
+            onClick={() => (bellActive ? handleStopBell() : triggerBell())}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0"
+            style={{
+              background: bellActive ? "#c9a84c" : "rgba(255,255,255,0.15)",
+            }}
+            data-ocid="home.bell.button"
           >
-            بِسْمِ اللهِ الرَّحْمَنِ الرَّحِيمِ
+            🔔
+          </button>
+        </div>
+
+        {/* Bismillah */}
+        <div className="relative flex flex-col items-center py-5 px-4">
+          <div
+            className="text-2xl mb-4 text-center"
+            style={{ color: "#c9a84c", fontFamily: "serif", lineHeight: 1.6 }}
+          >
+            بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </div>
 
-          {/* Greeting */}
+          {/* Greeting card */}
           <div
-            className="rounded-2xl px-5 py-3 mb-3"
+            className="w-full rounded-2xl px-5 py-4 mb-4 text-center"
             style={{
               background: "rgba(201,168,76,0.15)",
               border: "1px solid rgba(201,168,76,0.3)",
             }}
           >
+            <div
+              className="text-xl mb-1"
+              style={{ color: "#c9a84c", fontFamily: "serif" }}
+            >
+              السَّلامُ عَلَيْكُمْ
+            </div>
             <div className="text-white font-bold text-base">
               Assalamu Alaikum
             </div>
             <div
-              className="text-sm"
-              style={{ color: "#c9a84c", fontFamily: "serif" }}
+              className="text-sm mt-1"
+              style={{ color: "rgba(255,255,255,0.7)", fontFamily: "serif" }}
             >
               وَعَلَيْكُمُ السَّلام
             </div>
@@ -206,25 +307,13 @@ export function HomeScreen({ onTabChange }: Props) {
                   style={{
                     background: "rgba(201,168,76,0.2)",
                     color: "#c9a84c",
+                    border: "1px solid rgba(201,168,76,0.4)",
                   }}
                 >
-                  {soonLabel}
-                </div>
-              )}
-              {currentPrayerName && currentPrayerName !== nextPrayer.name && (
-                <div
-                  className="mt-2 text-xs"
-                  style={{ color: "rgba(255,255,255,0.6)" }}
-                >
-                  Chal rahi namaz:{" "}
-                  <span className="font-semibold text-white">
-                    {DISPLAY_NAMES[currentPrayerName] || currentPrayerName}
-                  </span>
+                  ⏰ {soonLabel}
                 </div>
               )}
             </div>
-
-            {/* See all times button */}
             <div className="px-4 pb-4">
               <button
                 type="button"
@@ -240,7 +329,7 @@ export function HomeScreen({ onTabChange }: Props) {
         )}
 
         {/* Quick Action Grid */}
-        <div className="text-sm font-bold" style={{ color: "#0f4a29" }}>
+        <div className="text-sm font-bold mb-1" style={{ color: "#0f4a29" }}>
           Quick Access
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -323,6 +412,19 @@ export function HomeScreen({ onTabChange }: Props) {
           <p className="text-xs mt-1" style={{ color: "#555" }}>
             📞 089589 99299
           </p>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center py-2 text-xs" style={{ color: "#999" }}>
+          © {new Date().getFullYear()}. Built with ❤️ using{" "}
+          <a
+            href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#1a6b3a" }}
+          >
+            caffeine.ai
+          </a>
         </div>
       </div>
     </div>
