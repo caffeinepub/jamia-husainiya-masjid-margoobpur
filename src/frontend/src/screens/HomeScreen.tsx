@@ -163,130 +163,129 @@ export function HomeScreen({ onTabChange }: Props) {
       {/* Islamic Header with bell button */}
       <IslamicHeader rightElement={bellButton} />
 
-      {/* Mosque Banner Image */}
-      <div className="overflow-hidden rounded-b-3xl shadow-lg">
-        <img
-          src="/assets/generated/mosque-banner.dim_800x300.jpg"
-          alt="Jamia Husainiya Masjid Margoobpur"
-          className="w-full object-cover object-center"
-          style={{ height: "190px" }}
-        />
+      {/* Mosque Illustration */}
+      <div className="px-4 pt-4">
+        <div className="rounded-2xl overflow-hidden shadow">
+          <img
+            src="/assets/generated/mosque-illustration.dim_800x400.png"
+            alt="Jamia Husainiya Masjid Margoobpur"
+            className="w-full object-cover"
+            style={{ height: "160px", objectPosition: "center top" }}
+          />
+        </div>
       </div>
 
-      <div className="p-4 flex flex-col gap-4">
-        {/* Welcome Card */}
+      <div className="p-4 flex flex-col gap-3">
+        {/* Assalamu Alaikum Card */}
         <div
-          className="rounded-2xl p-5 shadow-md text-center"
+          className="rounded-2xl p-4 shadow-sm flex items-start gap-3"
           style={{ background: "white", border: "1px solid #e8f5e9" }}
         >
-          <h2 className="font-bold text-xl" style={{ color: "#0d3d1f" }}>
-            Assalamu Alaikum
-          </h2>
           <div
-            className="text-lg mt-1 mb-2"
-            style={{
-              color: "#c9a84c",
-              fontFamily: "serif",
-              direction: "rtl",
-            }}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0"
+            style={{ background: "#e8f5e9" }}
           >
-            السَّلامُ عَلَيْكُمْ
+            🕌
           </div>
-          <p className="text-sm leading-relaxed" style={{ color: "#666" }}>
-            Welcome to Jamia Husainiya Masjid Margoobpur. May Allah bless you
-            and your family. Join us for daily prayers, Friday Khutba, and
-            community events.
-          </p>
-          {isFriday && (
-            <div
-              className="mt-3 inline-block px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: "#c9a84c", color: "#0f4a29" }}
-            >
-              🕌 Aaj Juma Mubarak!
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-base" style={{ color: "#0d3d1f" }}>
+              Assalamu Alaikum
             </div>
-          )}
+            <div
+              className="text-sm mt-0.5"
+              style={{
+                color: "#c9a84c",
+                fontFamily: "serif",
+                direction: "rtl",
+              }}
+            >
+              وَعَلَيْكُمُ السَّلام
+            </div>
+            <p
+              className="text-xs mt-1 leading-relaxed"
+              style={{ color: "#666" }}
+            >
+              Welcome to Jamia Husainiya Masjid Margoobpur. May Allah bless you
+              and your family.
+            </p>
+            {isFriday && (
+              <div
+                className="mt-2 inline-block px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{ background: "#c9a84c", color: "#0d3d1f" }}
+              >
+                🕌 Aaj Juma Mubarak!
+              </div>
+            )}
+          </div>
         </div>
 
         {/* NEXT PRAYER Card */}
         {nextPrayer && (
           <div
-            className="rounded-2xl overflow-hidden shadow-lg relative"
+            className="rounded-2xl p-4 shadow-md"
             style={{
-              background: "linear-gradient(135deg, #0d3d1f 0%, #1a6b3a 100%)",
-              border: "1px solid rgba(201,168,76,0.3)",
+              background: "#0d3d1f",
+              border: "1px solid rgba(201,168,76,0.25)",
             }}
             data-ocid="home.next_prayer.card"
           >
-            {/* Soon badge top-right */}
-            {soonLabel && (
-              <div
-                className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold"
-                style={{
-                  background: "#c9a84c",
-                  color: "#0d3d1f",
-                }}
-              >
-                ⏰ {soonLabel}
-              </div>
-            )}
-
             <div
-              className="px-4 py-2"
-              style={{ background: "rgba(0,0,0,0.18)" }}
+              className="text-xs font-bold tracking-widest uppercase mb-3"
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                letterSpacing: "0.18em",
+              }}
             >
-              <div
-                className="text-xs font-bold tracking-widest text-center uppercase"
-                style={{ color: "#c9a84c", letterSpacing: "0.2em" }}
-              >
-                NEXT PRAYER
+              NEXT PRAYER
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-bold text-white text-lg">
+                  {DISPLAY_NAMES[nextPrayer.name] || nextPrayer.name}
+                </div>
+                <div
+                  className="text-sm mt-0.5"
+                  style={{
+                    color: "#c9a84c",
+                    fontFamily: "serif",
+                    direction: "rtl",
+                  }}
+                >
+                  {ARABIC_NAMES[nextPrayer.name] || ""}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <div className="font-bold text-2xl" style={{ color: "white" }}>
+                  {nextPrayer.time}
+                </div>
+                {soonLabel && (
+                  <div
+                    className="px-2 py-0.5 rounded-full text-xs font-bold"
+                    style={{ background: "#c9a84c", color: "#0d3d1f" }}
+                  >
+                    ⏰ {soonLabel}
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className="flex flex-col items-center py-5 px-4">
-              <div className="font-bold text-white text-2xl">
-                {DISPLAY_NAMES[nextPrayer.name] || nextPrayer.name}
-              </div>
-              <div
-                className="text-lg mt-1"
-                style={{
-                  color: "#c9a84c",
-                  fontFamily: "serif",
-                  direction: "rtl",
-                }}
-              >
-                {ARABIC_NAMES[nextPrayer.name] || ""}
-              </div>
-              <div
-                className="text-3xl font-bold mt-2"
-                style={{ color: "white" }}
-              >
-                {nextPrayer.time}
-              </div>
-            </div>
-
-            <div className="px-4 pb-4">
-              <button
-                type="button"
-                onClick={() => onTabChange("namaz")}
-                className="w-full py-2.5 rounded-xl font-bold text-sm"
-                style={{ background: "#c9a84c", color: "#0d3d1f" }}
-                data-ocid="home.namaz_times.button"
-              >
-                🕌 Sab Namaz Times Dekhein →
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onTabChange("namaz")}
+              className="w-full mt-3 py-2 rounded-xl font-bold text-sm"
+              style={{ background: "rgba(201,168,76,0.18)", color: "#c9a84c" }}
+              data-ocid="home.namaz_times.button"
+            >
+              🕌 Sab Namaz Times Dekhein →
+            </button>
           </div>
         )}
 
         {/* Quick Access Grid */}
-        <div className="text-sm font-bold mb-1" style={{ color: "#0d3d1f" }}>
-          Quick Access
-        </div>
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => onTabChange("namaz")}
-            className="rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm"
+            className="rounded-2xl p-4 flex flex-col items-start gap-1.5 shadow-sm"
             style={{ background: "white", border: "1px solid #e8f5e9" }}
             data-ocid="home.namaz.button"
           >
@@ -301,7 +300,7 @@ export function HomeScreen({ onTabChange }: Props) {
           <button
             type="button"
             onClick={() => onTabChange("notice")}
-            className="rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm"
+            className="rounded-2xl p-4 flex flex-col items-start gap-1.5 shadow-sm"
             style={{ background: "white", border: "1px solid #e8f5e9" }}
             data-ocid="home.notice.button"
           >
@@ -316,7 +315,7 @@ export function HomeScreen({ onTabChange }: Props) {
           <button
             type="button"
             onClick={() => onTabChange("contact")}
-            className="rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm"
+            className="rounded-2xl p-4 flex flex-col items-start gap-1.5 shadow-sm"
             style={{ background: "white", border: "1px solid #e8f5e9" }}
             data-ocid="home.contact.button"
           >
@@ -331,7 +330,7 @@ export function HomeScreen({ onTabChange }: Props) {
           <button
             type="button"
             onClick={() => onTabChange("map")}
-            className="rounded-2xl p-4 flex flex-col items-start gap-2 shadow-sm"
+            className="rounded-2xl p-4 flex flex-col items-start gap-1.5 shadow-sm"
             style={{ background: "white", border: "1px solid #e8f5e9" }}
             data-ocid="home.map.button"
           >
