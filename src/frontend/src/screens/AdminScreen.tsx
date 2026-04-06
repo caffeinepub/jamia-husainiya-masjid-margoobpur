@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IslamicHeader } from "../components/IslamicHeader";
+import { SimpleHeader } from "../components/SimpleHeader";
 import {
   useAddAnnouncement,
   useAnnouncements,
@@ -118,7 +118,7 @@ export function AdminScreen() {
   if (!unlocked) {
     return (
       <div className="flex flex-col">
-        <IslamicHeader subtitle="🔒 Admin Panel" />
+        <SimpleHeader subtitle="🔒 Admin Panel" />
         <div className="p-6 flex flex-col items-center gap-6">
           <div className="text-5xl mt-4">🔐</div>
           <div className="text-center">
@@ -159,7 +159,7 @@ export function AdminScreen() {
   return (
     <div className="flex flex-col">
       {/* Islamic Header */}
-      <IslamicHeader
+      <SimpleHeader
         subtitle="⚙️ Admin Panel"
         rightElement={
           <button

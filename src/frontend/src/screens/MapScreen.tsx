@@ -1,4 +1,4 @@
-import { IslamicHeader } from "../components/IslamicHeader";
+import { SimpleHeader } from "../components/SimpleHeader";
 
 export function MapScreen() {
   const lat = 29.8629687;
@@ -9,7 +9,7 @@ export function MapScreen() {
   return (
     <div className="flex flex-col">
       {/* Islamic Header */}
-      <IslamicHeader subtitle="🗺️ Location / Jagah" />
+      <SimpleHeader subtitle="🗺️ Location / Jagah" />
 
       <div className="p-4 flex flex-col gap-4">
         {/* Masjid Info */}

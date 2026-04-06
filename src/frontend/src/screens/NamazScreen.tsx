@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { IslamicHeader } from "../components/IslamicHeader";
+import { SimpleHeader } from "../components/SimpleHeader";
 import { usePrayerTimes } from "../hooks/useQueries";
 import { isBellRinging, startBell, stopBell } from "../utils/bellAudio";
 import {
@@ -293,7 +293,7 @@ export function NamazScreen() {
       )}
 
       {/* Islamic Header */}
-      <IslamicHeader subtitle="🕌 Namaz Ka Waqt" rightElement={bellButton} />
+      <SimpleHeader subtitle="🕌 Namaz Ka Waqt" rightElement={bellButton} />
 
       <div className="p-4 flex flex-col gap-4">
         {/* Alarm Setup Section */}

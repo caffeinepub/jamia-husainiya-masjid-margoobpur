@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IslamicHeader } from "../components/IslamicHeader";
+import { SimpleHeader } from "../components/SimpleHeader";
 import {
   useAddCommitteeMember,
   useCommitteeMembers,
@@ -75,7 +75,7 @@ export function ContactScreen() {
   return (
     <div className="flex flex-col">
       {/* Islamic Header */}
-      <IslamicHeader subtitle="📞 Contact / Sampark" />
+      <SimpleHeader subtitle="📞 Contact / Sampark" />
 
       <div className="p-4 flex flex-col gap-4">
         {/* Main contact card */}

@@ -1,4 +1,4 @@
-import { IslamicHeader } from "../components/IslamicHeader";
+import { SimpleHeader } from "../components/SimpleHeader";
 import { useAnnouncements } from "../hooks/useQueries";
 
 export function NoticeScreen() {
@@ -7,7 +7,7 @@ export function NoticeScreen() {
   return (
     <div className="flex flex-col">
       {/* Islamic Header */}
-      <IslamicHeader subtitle="📢 Notice Board" />
+      <SimpleHeader subtitle="📢 Notice Board" />
 
       <div className="p-4 flex flex-col gap-3">
         {isLoading ? (
