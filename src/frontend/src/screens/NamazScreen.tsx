@@ -1,78 +1,49 @@
 import { useEffect, useRef, useState } from "react";
-import { SimpleHeader } from "../components/SimpleHeader";
 import { usePrayerTimes } from "../hooks/useQueries";
-import { isBellRinging, startBell, stopBell } from "../utils/bellAudio";
 import {
   ALARM_INTENTS,
-  getCurrentPrayer,
+  getDisplayName,
   isJumaPrayer,
-  launchAndroidAlarm,
-  normalizePrayerName,
+  launchAlarm,
   parseTime,
 } from "../utils/prayerUtils";
 
-const DISPLAY_NAMES: Record<string, string> = {
-  fajr: "Fajr",
-  zuhr: "Zuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-  khutba_juma: "Khutba Juma",
-  juma: "Juma",
-};
-
-const HINDI_NAMES: Record<string, string> = {
-  fajr: "फ़ज्र",
-  zuhr: "ज़ोहर",
-  asr: "अस्र",
-  maghrib: "मग़रिब",
-  isha: "इशा",
-  khutba_juma: "खुत्बा जुमा",
-  juma: "जुमा",
-};
-
 export function NamazScreen() {
-  const { data: prayers = [], isLoading } = usePrayerTimes();
   const [now, setNow] = useState(new Date());
-  const [bellActive, setBellActive] = useState(isBellRinging());
+  const { data: prayers = [], isLoading } = usePrayerTimes();
+
+  const [bellActive, setBellActive] = useState(false);
   const [bellSecondsLeft, setBellSecondsLeft] = useState(15 * 60);
   const bellTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const prevPrayerRef = useRef<string | null>(null);
+  const prevBellPrayerRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
+    const timer = setInterval(() => setNow(new Date()), 10000);
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-trigger bell at prayer time
   useEffect(() => {
     if (!prayers.length) return;
-    const currentPrayer = getCurrentPrayer(
-      prayers.map((p) => ({ ...p, displayName: p.name, isJuma: false })),
+    const regularPrayers = prayers.filter((p) => !isJumaPrayer(p.name));
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentPrayer = regularPrayers.find(
+      (p) => parseTime(p.time) === currentMinutes,
     );
-    if (currentPrayer && currentPrayer !== prevPrayerRef.current) {
-      prevPrayerRef.current = currentPrayer;
-      if (!bellActive) {
-        triggerBell();
-      }
+    if (currentPrayer && currentPrayer.name !== prevBellPrayerRef.current) {
+      prevBellPrayerRef.current = currentPrayer.name;
+      if (!bellActive) triggerBell();
     }
   });
 
   function triggerBell() {
     setBellActive(true);
     setBellSecondsLeft(15 * 60);
-    startBell(() => {
-      setBellActive(false);
-      if (bellTimerRef.current) {
-        clearInterval(bellTimerRef.current);
-        bellTimerRef.current = null;
-      }
-    });
     if (bellTimerRef.current) clearInterval(bellTimerRef.current);
     bellTimerRef.current = setInterval(() => {
       setBellSecondsLeft((prev) => {
         if (prev <= 1) {
           if (bellTimerRef.current) clearInterval(bellTimerRef.current);
+          setBellActive(false);
           return 0;
         }
         return prev - 1;
@@ -81,27 +52,12 @@ export function NamazScreen() {
   }
 
   function handleStopBell() {
-    stopBell();
     setBellActive(false);
     if (bellTimerRef.current) {
       clearInterval(bellTimerRef.current);
       bellTimerRef.current = null;
     }
   }
-
-  const isFriday = now.getDay() === 5;
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  // Normalize names for filtering — backend sends "KhutbaJuma", frontend uses "khutba_juma"
-  const regularPrayers = prayers
-    .filter((p) => !isJumaPrayer(p.name))
-    .sort((a, b) => parseTime(a.time) - parseTime(b.time));
-
-  const jumaPrayer = prayers.find((p) => isJumaPrayer(p.name));
-
-  const currentPrayerName = getCurrentPrayer(
-    regularPrayers.map((p) => ({ ...p, displayName: p.name, isJuma: false })),
-  );
 
   const formatCountdown = (secs: number) => {
     const m = Math.floor(secs / 60)
@@ -111,180 +67,72 @@ export function NamazScreen() {
     return `${m}:${s}`;
   };
 
-  const renderPrayerCard = (
-    prayer: { name: string; time: string; enable: boolean },
-    index: number,
-    isDimmed = false,
-    isJumaHighlight = false,
-  ) => {
-    // Normalize the name for display lookups
-    const normalizedName = normalizePrayerName(prayer.name);
-    const isCurrent =
-      prayer.name === currentPrayerName && !isDimmed && !isJumaHighlight;
-    const isUpcoming =
-      !isDimmed &&
-      !isJumaHighlight &&
-      prayer.name !== currentPrayerName &&
-      parseTime(prayer.time) > currentMinutes;
-    const displayName = DISPLAY_NAMES[normalizedName] || prayer.name;
-    const hindiName = HINDI_NAMES[normalizedName] || "";
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const isFriday = now.getDay() === 5;
 
-    return (
-      <div
-        key={prayer.name}
-        className="rounded-2xl overflow-hidden shadow-sm"
-        style={{
-          background: isJumaHighlight
-            ? "#1a6b3a"
-            : isCurrent
-              ? "#1a6b3a"
-              : isDimmed
-                ? "#f5f5f5"
-                : "white",
-          opacity: isDimmed ? 0.6 : 1,
-          border: isJumaHighlight
-            ? "2px solid #c9a84c"
-            : isCurrent
-              ? "2px solid #c9a84c"
-              : `1px solid ${isDimmed ? "#e0e0e0" : "#e8f5e9"}`,
-        }}
-        data-ocid={`namaz.item.${index + 1}`}
-      >
-        <div className="flex items-center px-4 py-3.5 gap-3">
-          <div
-            className="w-11 h-11 rounded-full flex items-center justify-center text-xl flex-shrink-0"
-            style={{
-              background:
-                isJumaHighlight || isCurrent
-                  ? "rgba(201,168,76,0.25)"
-                  : isDimmed
-                    ? "#ececec"
-                    : "#e8f5e9",
-            }}
-          >
-            🕌
-          </div>
-          <div className="flex-1">
-            <div
-              className="font-bold text-sm"
-              style={{
-                color:
-                  isJumaHighlight || isCurrent
-                    ? "white"
-                    : isDimmed
-                      ? "#999"
-                      : "#0d3d1f",
-              }}
-            >
-              {displayName}
-            </div>
-            {hindiName && (
-              <div
-                className="text-xs"
-                style={{
-                  color:
-                    isJumaHighlight || isCurrent
-                      ? "rgba(255,255,255,0.7)"
-                      : isDimmed
-                        ? "#bbb"
-                        : "#888",
-                }}
-              >
-                {hindiName}
-              </div>
-            )}
-            <div
-              className="text-xs font-semibold mt-0.5"
-              style={{
-                color:
-                  isJumaHighlight || isCurrent
-                    ? "rgba(255,255,255,0.9)"
-                    : isDimmed
-                      ? "#aaa"
-                      : "#444",
-              }}
-            >
-              {prayer.time}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isJumaHighlight && (
-              <span
-                className="text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: "#c9a84c", color: "#0d3d1f" }}
-              >
-                आज Juma! 🕌
-              </span>
-            )}
-            {isCurrent && (
-              <span
-                className="text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: "#c9a84c", color: "#0d3d1f" }}
-              >
-                Abhi
-              </span>
-            )}
-            {isUpcoming && (
-              <span
-                className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{
-                  background: "#e8f5e9",
-                  color: "#1a6b3a",
-                }}
-              >
-                Agle
-              </span>
-            )}
-            {isDimmed && (
-              <span
-                className="text-xs px-2 py-0.5 rounded-full"
-                style={{ background: "#ececec", color: "#999" }}
-              >
-                Sirf Juma
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const regularPrayers = prayers
+    .filter((p) => !isJumaPrayer(p.name))
+    .sort((a, b) => Number(a.order) - Number(b.order));
 
-  const bellButton = (
-    <button
-      type="button"
-      onClick={() => (bellActive ? handleStopBell() : triggerBell())}
-      className="w-9 h-9 rounded-full flex items-center justify-center text-base"
-      style={{
-        background: bellActive ? "#c9a84c" : "rgba(255,255,255,0.15)",
-      }}
-      data-ocid="namaz.bell.button"
-    >
-      🔔
-    </button>
+  const jumaPrayer = prayers.find((p) => isJumaPrayer(p.name));
+
+  const sortedRegular = [...regularPrayers].sort(
+    (a, b) => parseTime(a.time) - parseTime(b.time),
   );
+  const currentPrayerName = sortedRegular.reduce<string | null>((acc, p) => {
+    if (parseTime(p.time) <= currentMinutes) return p.name;
+    return acc;
+  }, null);
+  const nextPrayerName =
+    sortedRegular.find((p) => parseTime(p.time) > currentMinutes)?.name ||
+    sortedRegular[0]?.name;
+
+  const alarmList = [
+    ALARM_INTENTS.fajr,
+    ALARM_INTENTS.zuhr,
+    ALARM_INTENTS.asr,
+    ALARM_INTENTS.maghrib,
+    ALARM_INTENTS.isha,
+  ];
 
   return (
-    <div className="flex flex-col">
-      {/* Bell Banner */}
+    <div style={{ background: "#f0f9f0", minHeight: "100vh" }}>
       {bellActive && (
         <div
-          className="flex items-center justify-between px-4 py-3 gap-2"
-          style={{ background: "#c0392b" }}
+          style={{
+            background: "#c0392b",
+            padding: "10px 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+          }}
           data-ocid="namaz.bell_banner.panel"
         >
           <div>
-            <div className="text-white font-bold text-sm">
+            <div
+              style={{ color: "white", fontWeight: "bold", fontSize: "13px" }}
+            >
               🔔 Namaz ka waqt ho gaya!
             </div>
-            <div className="text-xs" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "11px" }}>
               Bell {formatCountdown(bellSecondsLeft)} mein band ho jayegi
             </div>
           </div>
           <button
             type="button"
             onClick={handleStopBell}
-            className="text-xs font-bold px-3 py-2 rounded-lg flex-shrink-0"
-            style={{ background: "white", color: "#c0392b" }}
+            style={{
+              background: "white",
+              color: "#c0392b",
+              border: "none",
+              borderRadius: "8px",
+              padding: "6px 8px",
+              fontSize: "10px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
             data-ocid="namaz.bell_stop.button"
           >
             ✅ Masjid pahunch gaya
@@ -292,134 +140,321 @@ export function NamazScreen() {
         </div>
       )}
 
-      {/* Islamic Header */}
-      <SimpleHeader subtitle="🕌 Namaz Ka Waqt" rightElement={bellButton} />
-
-      <div className="p-4 flex flex-col gap-4">
-        {/* Alarm Setup Section */}
-        <div
-          className="rounded-2xl overflow-hidden shadow-md"
+      <div
+        style={{
+          background: "#1a7a3c",
+          padding: "12px 16px",
+          borderBottom: "2px solid #145e2e",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2
           style={{
-            background: "white",
-            border: "1px solid #e8f5e9",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: "16px",
+            margin: 0,
           }}
         >
+          🕌 Namaz ka Waqt
+        </h2>
+        <button
+          type="button"
+          onClick={() => (bellActive ? handleStopBell() : triggerBell())}
+          style={{
+            background: bellActive ? "#f5c518" : "rgba(255,255,255,0.2)",
+            border: "none",
+            borderRadius: "50%",
+            width: "30px",
+            height: "30px",
+            fontSize: "15px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          data-ocid="namaz.bell.button"
+        >
+          🔔
+        </button>
+      </div>
+
+      {isFriday && (
+        <div
+          style={{
+            background: "#e8f5e9",
+            padding: "10px 16px",
+            textAlign: "center",
+            borderBottom: "1px solid #a5d6a7",
+          }}
+        >
+          <span
+            style={{ color: "#1a7a3c", fontWeight: "bold", fontSize: "14px" }}
+          >
+            🕌 Aaj Juma hai! Friday Mubarak
+          </span>
+        </div>
+      )}
+
+      <div style={{ padding: "16px" }}>
+        {/* Alarm Setup */}
+        <div style={{ marginBottom: "20px" }}>
           <div
-            className="px-4 py-3"
             style={{
-              background: "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
+              fontWeight: "bold",
+              fontSize: "14px",
+              color: "#1a7a3c",
+              marginBottom: "4px",
             }}
           >
-            <div className="font-bold text-sm text-white">
-              📱 Namaz Alarm Setup
-            </div>
-            <div
-              className="text-xs mt-0.5"
-              style={{ color: "rgba(255,255,255,0.8)" }}
-            >
-              Android mein Clock app kholkar alarm set karo
-            </div>
+            📱 Namaz Alarm Setup
           </div>
-          <div className="p-4 flex flex-col gap-2">
-            <p className="text-xs mb-1" style={{ color: "#555" }}>
-              Neeche diye button dabao — Clock app khulega aur alarm
-              automatically set ho jayega.
-            </p>
-            {(
-              Object.entries(ALARM_INTENTS) as [
-                keyof typeof ALARM_INTENTS,
-                (typeof ALARM_INTENTS)[keyof typeof ALARM_INTENTS],
-              ][]
-            ).map(([key, alarm]) => (
+          <div
+            style={{ fontSize: "12px", color: "#666", marginBottom: "10px" }}
+          >
+            Android mein Clock app kholkar alarm set karo. Neeche diye button
+            dabao.
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {alarmList.map((alarm, i) => (
               <button
-                key={key}
+                key={alarm.displayName}
                 type="button"
                 onClick={() =>
-                  launchAndroidAlarm(
+                  launchAlarm(
                     alarm.intent,
-                    `${alarm.displayName} Namaz ka waqt: ${alarm.time}`,
+                    `${alarm.displayName} — ${alarm.time}`,
                   )
                 }
-                className="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm text-left"
                 style={{
-                  background: "#1a6b3a",
-                  color: "white",
-                  border: "none",
+                  background: "#e8f5e9",
+                  border: "1px solid #a5d6a7",
+                  borderRadius: "8px",
+                  padding: "10px 14px",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "#145e2e",
+                  cursor: "pointer",
+                  textAlign: "left",
                 }}
-                data-ocid={`namaz.alarm_${key}.button`}
+                data-ocid={`namaz.alarm.button.${i + 1}`}
               >
-                <span className="text-base flex-shrink-0">🔔</span>
-                <span className="flex-1">
-                  {alarm.displayName} Alarm Set karo
-                </span>
-                <span
-                  className="text-xs font-normal flex-shrink-0"
-                  style={{ color: "rgba(255,255,255,0.75)" }}
-                >
-                  {alarm.time}
-                </span>
+                🔔 {alarm.displayName} Alarm Set karo — {alarm.time}
               </button>
             ))}
-            <p className="text-xs mt-1" style={{ color: "#888" }}>
-              iPhone users: button dabao, time dekhkar manually Clock app mein
-              set karo.
-            </p>
+          </div>
+          <div style={{ fontSize: "11px", color: "#888", marginTop: "8px" }}>
+            iPhone users: button dabao, time dekhkar manually Clock app mein set
+            karo.
           </div>
         </div>
 
-        {/* Prayer Times List */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-sm" style={{ color: "#0d3d1f" }}>
-              Namaz ka Waqt
-            </div>
-            {isFriday && (
-              <span
-                className="text-xs font-bold px-2 py-1 rounded-full"
-                style={{ background: "#c9a84c", color: "#0d3d1f" }}
+        <div style={{ borderTop: "2px solid #a5d6a7", marginBottom: "16px" }} />
+
+        <div
+          style={{
+            fontWeight: "bold",
+            fontSize: "14px",
+            color: "#1a7a3c",
+            marginBottom: "10px",
+          }}
+        >
+          Namaz ka Waqt
+        </div>
+
+        {isLoading ? (
+          <div style={{ color: "#888", fontSize: "13px" }}>Loading...</div>
+        ) : (
+          <div>
+            {isFriday && jumaPrayer && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 12px",
+                  borderLeft: "4px solid #f5c518",
+                  background: "#fffde7",
+                  marginBottom: "4px",
+                }}
+                data-ocid="namaz.juma.panel"
               >
-                आज Juma Hai! 🕌
-              </span>
+                <div>
+                  <div
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "14px",
+                      color: "#1a7a3c",
+                    }}
+                  >
+                    🕌 {getDisplayName(jumaPrayer.name)}
+                  </div>
+                  <span
+                    style={{
+                      background: "#f5c518",
+                      color: "#1a7a3c",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      padding: "1px 6px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    Sirf Juma
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: "15px",
+                    color: "#145e2e",
+                  }}
+                >
+                  {jumaPrayer.time}
+                </div>
+              </div>
+            )}
+
+            {regularPrayers.map((prayer, i) => {
+              const isCurrent = prayer.name === currentPrayerName;
+              const isNext = prayer.name === nextPrayerName;
+              return (
+                <div
+                  key={String(prayer.order)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 12px",
+                    borderLeft: `4px solid ${isCurrent ? "#f5c518" : isNext ? "#1a7a3c" : "#c8e6c9"}`,
+                    background: isCurrent
+                      ? "#f9fbe7"
+                      : isNext
+                        ? "#e8f5e9"
+                        : "transparent",
+                    borderBottom:
+                      i < regularPrayers.length - 1
+                        ? "1px solid #e8f5e9"
+                        : "none",
+                  }}
+                  data-ocid={`namaz.prayer.item.${i + 1}`}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <span style={{ fontSize: "16px" }}>🕌</span>
+                    <span
+                      style={{
+                        fontWeight: "600",
+                        fontSize: "14px",
+                        color: isCurrent ? "#1a7a3c" : "#333",
+                      }}
+                    >
+                      {getDisplayName(prayer.name)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    {isCurrent && (
+                      <span
+                        style={{
+                          background: "#f5c518",
+                          color: "#1a7a3c",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        Abhi
+                      </span>
+                    )}
+                    {isNext && !isCurrent && (
+                      <span
+                        style={{
+                          background: "#1a7a3c",
+                          color: "white",
+                          fontSize: "10px",
+                          fontWeight: "bold",
+                          padding: "1px 6px",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        Agle
+                      </span>
+                    )}
+                    <span
+                      style={{
+                        fontWeight: "bold",
+                        fontSize: "14px",
+                        color: "#145e2e",
+                      }}
+                    >
+                      {prayer.time}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {!isFriday && jumaPrayer && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 12px",
+                  borderLeft: "4px solid #ccc",
+                  opacity: 0.5,
+                  marginTop: "4px",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontWeight: "600",
+                      fontSize: "13px",
+                      color: "#888",
+                    }}
+                  >
+                    🕌 {getDisplayName(jumaPrayer.name)}
+                  </div>
+                  <span
+                    style={{
+                      background: "#e0e0e0",
+                      color: "#888",
+                      fontSize: "10px",
+                      fontWeight: "bold",
+                      padding: "1px 6px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    Sirf Juma
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                    color: "#888",
+                  }}
+                >
+                  {jumaPrayer.time}
+                </span>
+              </div>
             )}
           </div>
-
-          {isLoading ? (
-            <div
-              className="flex flex-col gap-2"
-              data-ocid="namaz.loading_state"
-            >
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="h-16 rounded-2xl animate-pulse"
-                  style={{ background: "#e8f5e9" }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {/* Friday: Juma card at top with gold border */}
-              {isFriday &&
-                jumaPrayer &&
-                renderPrayerCard(jumaPrayer, 0, false, true)}
-
-              {/* Regular prayers */}
-              {regularPrayers.map((prayer, i) =>
-                renderPrayerCard(prayer, isFriday ? i + 1 : i),
-              )}
-
-              {/* Non-Friday: Juma card at bottom, dimmed */}
-              {!isFriday &&
-                jumaPrayer &&
-                renderPrayerCard(
-                  jumaPrayer,
-                  regularPrayers.length,
-                  true,
-                  false,
-                )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

@@ -7,34 +7,39 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface Announcement {
+export interface Notice {
+    id: bigint;
     title: string;
-    date: string;
-    message: string;
+    body: string;
 }
 export interface PrayerTime {
+    order: bigint;
     name: string;
     time: string;
-    enable: boolean;
+    isJuma: boolean;
 }
 export interface CommitteeMember {
     id: bigint;
     name: string;
     role: string;
-    phoneNumber: string;
+    phone: string;
 }
 export interface backendInterface {
-    addAnnouncement(pin: string, title: string, message: string, date: string): Promise<boolean>;
-    addCommitteeMember(pin: string, name: string, role: string, phoneNumber: string): Promise<boolean>;
-    deleteAnnouncement(pin: string, id: bigint): Promise<boolean>;
+    addCommitteeMember(pin: string, name: string, role: string, phone: string): Promise<bigint | null>;
+    addNotice(pin: string, title: string, body: string): Promise<bigint | null>;
     deleteCommitteeMember(pin: string, id: bigint): Promise<boolean>;
+    deleteNotice(pin: string, id: bigint): Promise<boolean>;
+    getAllCommitteeMembers(): Promise<Array<CommitteeMember>>;
+    getAllNotices(): Promise<Array<Notice>>;
     getAllPrayerTimes(): Promise<Array<PrayerTime>>;
-    getAnnouncement(id: bigint): Promise<Announcement | null>;
-    getAnnouncements(): Promise<Array<Announcement>>;
-    getCommitteeMembers(): Promise<Array<CommitteeMember>>;
-    getPrayerTime(prayerName: string): Promise<PrayerTime | null>;
-    getSortedPrayerTimes(): Promise<Array<PrayerTime>>;
-    togglePrayerTime(pin: string, prayerName: string, enable: boolean): Promise<boolean>;
-    updateMultiplePrayerTimes(pin: string, newTimes: Array<[string, string]>): Promise<boolean>;
-    updatePrayerTime(pin: string, prayerTime: PrayerTime): Promise<boolean>;
+    getCommitteeMember(id: bigint): Promise<CommitteeMember | null>;
+    getNotice(id: bigint): Promise<Notice | null>;
+    getPrayerTime(name: string): Promise<PrayerTime | null>;
+    getPrayerTimesByName(): Promise<Array<PrayerTime>>;
+    getPrayerTimesByOrder(): Promise<Array<PrayerTime>>;
+    updateCommitteeMember(pin: string, id: bigint, name: string, role: string, phone: string): Promise<boolean>;
+    updateMultiplePrayerTimes(pin: string, updates: Array<[string, string]>): Promise<boolean>;
+    updateNotice(pin: string, id: bigint, title: string, body: string): Promise<boolean>;
+    updatePrayerTime(pin: string, name: string, time: string, isJuma: boolean, order: bigint): Promise<boolean>;
+    verifyAdminPin(pin: string): Promise<boolean>;
 }

@@ -8,92 +8,128 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const PrayerTime = IDL.Record({
-  'name' : IDL.Text,
-  'time' : IDL.Text,
-  'enable' : IDL.Bool,
-});
-export const Announcement = IDL.Record({
-  'title' : IDL.Text,
-  'date' : IDL.Text,
-  'message' : IDL.Text,
-});
 export const CommitteeMember = IDL.Record({
   'id' : IDL.Nat,
   'name' : IDL.Text,
   'role' : IDL.Text,
-  'phoneNumber' : IDL.Text,
+  'phone' : IDL.Text,
+});
+export const Notice = IDL.Record({
+  'id' : IDL.Nat,
+  'title' : IDL.Text,
+  'body' : IDL.Text,
+});
+export const PrayerTime = IDL.Record({
+  'order' : IDL.Nat,
+  'name' : IDL.Text,
+  'time' : IDL.Text,
+  'isJuma' : IDL.Bool,
 });
 
 export const idlService = IDL.Service({
-  'addAnnouncement' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
-      [IDL.Bool],
-      [],
-    ),
   'addCommitteeMember' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Opt(IDL.Nat)],
+      [],
+    ),
+  'addNotice' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Opt(IDL.Nat)],
+      [],
+    ),
+  'deleteCommitteeMember' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
+  'deleteNotice' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
+  'getAllCommitteeMembers' : IDL.Func(
+      [],
+      [IDL.Vec(CommitteeMember)],
+      ['query'],
+    ),
+  'getAllNotices' : IDL.Func([], [IDL.Vec(Notice)], ['query']),
+  'getAllPrayerTimes' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
+  'getCommitteeMember' : IDL.Func(
+      [IDL.Nat],
+      [IDL.Opt(CommitteeMember)],
+      ['query'],
+    ),
+  'getNotice' : IDL.Func([IDL.Nat], [IDL.Opt(Notice)], ['query']),
+  'getPrayerTime' : IDL.Func([IDL.Text], [IDL.Opt(PrayerTime)], ['query']),
+  'getPrayerTimesByName' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
+  'getPrayerTimesByOrder' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
+  'updateCommitteeMember' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
       [IDL.Bool],
       [],
     ),
-  'deleteAnnouncement' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
-  'deleteCommitteeMember' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
-  'getAllPrayerTimes' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
-  'getAnnouncement' : IDL.Func([IDL.Nat], [IDL.Opt(Announcement)], ['query']),
-  'getAnnouncements' : IDL.Func([], [IDL.Vec(Announcement)], ['query']),
-  'getCommitteeMembers' : IDL.Func([], [IDL.Vec(CommitteeMember)], ['query']),
-  'getPrayerTime' : IDL.Func([IDL.Text], [IDL.Opt(PrayerTime)], ['query']),
-  'getSortedPrayerTimes' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
-  'togglePrayerTime' : IDL.Func([IDL.Text, IDL.Text, IDL.Bool], [IDL.Bool], []),
   'updateMultiplePrayerTimes' : IDL.Func(
       [IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text))],
       [IDL.Bool],
       [],
     ),
-  'updatePrayerTime' : IDL.Func([IDL.Text, PrayerTime], [IDL.Bool], []),
+  'updateNotice' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Text, IDL.Text],
+      [IDL.Bool],
+      [],
+    ),
+  'updatePrayerTime' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Bool, IDL.Nat],
+      [IDL.Bool],
+      [],
+    ),
+  'verifyAdminPin' : IDL.Func([IDL.Text], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const PrayerTime = IDL.Record({
-    'name' : IDL.Text,
-    'time' : IDL.Text,
-    'enable' : IDL.Bool,
-  });
-  const Announcement = IDL.Record({
-    'title' : IDL.Text,
-    'date' : IDL.Text,
-    'message' : IDL.Text,
-  });
   const CommitteeMember = IDL.Record({
     'id' : IDL.Nat,
     'name' : IDL.Text,
     'role' : IDL.Text,
-    'phoneNumber' : IDL.Text,
+    'phone' : IDL.Text,
+  });
+  const Notice = IDL.Record({
+    'id' : IDL.Nat,
+    'title' : IDL.Text,
+    'body' : IDL.Text,
+  });
+  const PrayerTime = IDL.Record({
+    'order' : IDL.Nat,
+    'name' : IDL.Text,
+    'time' : IDL.Text,
+    'isJuma' : IDL.Bool,
   });
   
   return IDL.Service({
-    'addAnnouncement' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
-        [IDL.Bool],
-        [],
-      ),
     'addCommitteeMember' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
-        [IDL.Bool],
+        [IDL.Opt(IDL.Nat)],
         [],
       ),
-    'deleteAnnouncement' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
+    'addNotice' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Opt(IDL.Nat)],
+        [],
+      ),
     'deleteCommitteeMember' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
+    'deleteNotice' : IDL.Func([IDL.Text, IDL.Nat], [IDL.Bool], []),
+    'getAllCommitteeMembers' : IDL.Func(
+        [],
+        [IDL.Vec(CommitteeMember)],
+        ['query'],
+      ),
+    'getAllNotices' : IDL.Func([], [IDL.Vec(Notice)], ['query']),
     'getAllPrayerTimes' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
-    'getAnnouncement' : IDL.Func([IDL.Nat], [IDL.Opt(Announcement)], ['query']),
-    'getAnnouncements' : IDL.Func([], [IDL.Vec(Announcement)], ['query']),
-    'getCommitteeMembers' : IDL.Func([], [IDL.Vec(CommitteeMember)], ['query']),
+    'getCommitteeMember' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Opt(CommitteeMember)],
+        ['query'],
+      ),
+    'getNotice' : IDL.Func([IDL.Nat], [IDL.Opt(Notice)], ['query']),
     'getPrayerTime' : IDL.Func([IDL.Text], [IDL.Opt(PrayerTime)], ['query']),
-    'getSortedPrayerTimes' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
-    'togglePrayerTime' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Bool],
+    'getPrayerTimesByName' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
+    'getPrayerTimesByOrder' : IDL.Func([], [IDL.Vec(PrayerTime)], ['query']),
+    'updateCommitteeMember' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
         [IDL.Bool],
         [],
       ),
@@ -102,7 +138,17 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Bool],
         [],
       ),
-    'updatePrayerTime' : IDL.Func([IDL.Text, PrayerTime], [IDL.Bool], []),
+    'updateNotice' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
+    'updatePrayerTime' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Bool, IDL.Nat],
+        [IDL.Bool],
+        [],
+      ),
+    'verifyAdminPin' : IDL.Func([IDL.Text], [IDL.Bool], []),
   });
 };
 

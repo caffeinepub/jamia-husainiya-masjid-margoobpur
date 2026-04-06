@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { SimpleHeader } from "../components/SimpleHeader";
 import {
   useAddCommitteeMember,
   useCommitteeMembers,
   useDeleteCommitteeMember,
+  useUpdateCommitteeMember,
 } from "../hooks/useQueries";
 
 const ADMIN_PIN = "786";
@@ -12,396 +12,670 @@ export function ContactScreen() {
   const { data: members = [], isLoading } = useCommitteeMembers();
   const addMember = useAddCommitteeMember();
   const deleteMember = useDeleteCommitteeMember();
+  const updateMember = useUpdateCommitteeMember();
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinVerified, setPinVerified] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [phone, setPhone] = useState("");
-  const [pinInput, setPinInput] = useState("");
-  const [pinVerified, setPinVerified] = useState(false);
-  const [deletePin, setDeletePin] = useState("");
-  const [deletingId, setDeletingId] = useState<bigint | null>(null);
 
-  function handleAddSubmit(e: React.FormEvent) {
+  const [deletingId, setDeletingId] = useState<bigint | null>(null);
+  const [deletePin, setDeletePin] = useState("");
+
+  const [editingMember, setEditingMember] = useState<{
+    id: bigint;
+    name: string;
+    role: string;
+    phone: string;
+  } | null>(null);
+  const [editPin, setEditPin] = useState("");
+  const [editPinVerified, setEditPinVerified] = useState(false);
+
+  const inputStyle = {
+    padding: "8px 12px",
+    border: "1px solid #c8e6c9",
+    borderRadius: "6px",
+    fontSize: "13px",
+    width: "100%",
+    boxSizing: "border-box" as const,
+  };
+
+  async function handleAddSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!pinVerified) {
-      alert("Pehle PIN verify karo!");
-      return;
+    if (!name.trim() || !phone.trim()) return;
+    const result = await addMember.mutateAsync({
+      pin: ADMIN_PIN,
+      name: name.trim(),
+      role: role.trim(),
+      phone: phone.trim(),
+    });
+    if (result !== null) {
+      setName("");
+      setRole("");
+      setPhone("");
+      setShowAddForm(false);
+      setPinVerified(false);
+      setPinInput("");
     }
-    if (!name.trim() || !role.trim() || !phone.trim()) {
-      alert("Sab fields bharo!");
-      return;
-    }
-    addMember.mutate(
-      {
-        pin: ADMIN_PIN,
-        name: name.trim(),
-        role: role.trim(),
-        phoneNumber: phone.trim(),
-      },
-      {
-        onSuccess: () => {
-          setName("");
-          setRole("");
-          setPhone("");
-          setShowAddForm(false);
-          setPinVerified(false);
-          setPinInput("");
-        },
-      },
-    );
   }
 
-  function handleDelete(id: bigint) {
+  async function handleDeleteWithPin(id: bigint) {
     if (deletePin !== ADMIN_PIN) {
-      setDeletingId(id);
+      alert("PIN galat hai!");
       return;
     }
-    deleteMember.mutate({ pin: ADMIN_PIN, id });
+    await deleteMember.mutateAsync({ pin: ADMIN_PIN, id });
     setDeletingId(null);
     setDeletePin("");
   }
 
-  function handleDeleteWithPin(id: bigint) {
-    if (deletePin === ADMIN_PIN) {
-      deleteMember.mutate({ pin: ADMIN_PIN, id });
-      setDeletingId(null);
-      setDeletePin("");
-    } else {
-      alert("PIN galat hai!");
-    }
+  async function handleUpdateSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingMember) return;
+    await updateMember.mutateAsync({
+      pin: ADMIN_PIN,
+      id: editingMember.id,
+      name: editingMember.name,
+      role: editingMember.role,
+      phone: editingMember.phone,
+    });
+    setEditingMember(null);
+    setEditPin("");
+    setEditPinVerified(false);
   }
 
   return (
-    <div className="flex flex-col">
-      {/* Islamic Header */}
-      <SimpleHeader subtitle="📞 Contact / Sampark" />
-
-      <div className="p-4 flex flex-col gap-4">
-        {/* Main contact card */}
-        <div
-          className="rounded-2xl overflow-hidden shadow-md"
+    <div style={{ background: "#f0f9f0", minHeight: "100vh" }}>
+      <div
+        style={{
+          background: "#1a7a3c",
+          padding: "12px 16px",
+          borderBottom: "2px solid #145e2e",
+        }}
+      >
+        <h2
           style={{
-            background: "white",
-            border: "1px solid #e8f5e9",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: "16px",
+            margin: 0,
           }}
         >
+          📞 Sampark / Contact
+        </h2>
+      </div>
+
+      <div style={{ padding: "16px" }}>
+        <div
+          style={{
+            border: "1px solid #a5d6a7",
+            borderRadius: "8px",
+            padding: "14px",
+            background: "white",
+            marginBottom: "20px",
+          }}
+          data-ocid="contact.info.card"
+        >
           <div
-            className="px-4 py-3"
             style={{
-              background: "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
+              fontWeight: "bold",
+              fontSize: "14px",
+              color: "#1a7a3c",
+              marginBottom: "4px",
             }}
           >
-            <div className="font-bold text-sm text-white">
-              🕌 Jamia Husainiya Masjid Margoobpur
-            </div>
+            Jamia Husainiya Masjid Margoobpur
           </div>
-          <div className="p-4 flex flex-col gap-3">
-            <div className="text-sm" style={{ color: "#555" }}>
-              📍 Margoobpur Deedaheri, Haridwar, Uttarakhand — 247667
-            </div>
-            <div className="text-sm font-semibold" style={{ color: "#0d3d1f" }}>
-              📞 089589 99299
-            </div>
-            <div className="flex gap-3">
-              <a
-                href="tel:08958999299"
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
-                style={{ background: "#1a6b3a", color: "white" }}
-                data-ocid="contact.call.button"
-              >
-                📞 Call karo
-              </a>
-              <a
-                href="https://wa.me/918958999299"
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm"
-                style={{ background: "#25d366", color: "white" }}
-                data-ocid="contact.whatsapp.button"
-              >
-                💬 WhatsApp
-              </a>
-            </div>
+          <div
+            style={{ fontSize: "13px", color: "#555", marginBottom: "12px" }}
+          >
+            📞 089589 99299
+          </div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <a
+              href="tel:08958999299"
+              style={{
+                flex: 1,
+                background: "#1a7a3c",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                padding: "9px 0",
+                fontSize: "13px",
+                fontWeight: "bold",
+                textAlign: "center",
+                textDecoration: "none",
+                display: "block",
+              }}
+              data-ocid="contact.call.button"
+            >
+              📞 Call karo
+            </a>
+            <a
+              href="https://wa.me/918958999299"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex: 1,
+                background: "#25D366",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                padding: "9px 0",
+                fontSize: "13px",
+                fontWeight: "bold",
+                textAlign: "center",
+                textDecoration: "none",
+                display: "block",
+              }}
+              data-ocid="contact.whatsapp.button"
+            >
+              💬 WhatsApp
+            </a>
           </div>
         </div>
 
-        {/* Committee Members */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-sm" style={{ color: "#0d3d1f" }}>
-              👥 Masjid Committee
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="text-xs px-3 py-1.5 rounded-full font-semibold"
-              style={{ background: "#1a6b3a", color: "white" }}
-              data-ocid="contact.add_member.button"
-            >
-              + Member Add karo
-            </button>
-          </div>
+        <div
+          style={{
+            fontWeight: "bold",
+            fontSize: "15px",
+            color: "#1a7a3c",
+            marginBottom: "12px",
+          }}
+        >
+          Masjid Committee
+        </div>
 
-          {/* Add Form */}
-          {showAddForm && (
+        <button
+          type="button"
+          onClick={() => setShowAddForm(!showAddForm)}
+          style={{
+            background: showAddForm ? "#e8f5e9" : "#1a7a3c",
+            color: showAddForm ? "#1a7a3c" : "white",
+            border: showAddForm ? "1px solid #a5d6a7" : "none",
+            borderRadius: "6px",
+            padding: "8px 14px",
+            fontSize: "13px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            marginBottom: "12px",
+          }}
+          data-ocid="contact.add_member.open_modal_button"
+        >
+          {showAddForm ? "✕ Cancel" : "+ Member Add karo"}
+        </button>
+
+        {showAddForm && (
+          <form
+            onSubmit={handleAddSubmit}
+            style={{
+              border: "1px solid #a5d6a7",
+              borderRadius: "8px",
+              padding: "12px",
+              background: "white",
+              marginBottom: "14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+            data-ocid="contact.add_member.modal"
+          >
+            {!pinVerified ? (
+              <div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#555",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Member add karne ke liye Admin PIN dalo
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    type="password"
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="PIN"
+                    style={{ ...inputStyle, flex: 1 }}
+                    data-ocid="contact.pin.input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (pinInput === ADMIN_PIN) setPinVerified(true);
+                      else alert("PIN galat hai!");
+                    }}
+                    style={{
+                      background: "#1a7a3c",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "8px 14px",
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                    }}
+                    data-ocid="contact.pin_verify.button"
+                  >
+                    Verify karo
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Name"
+                  style={inputStyle}
+                  data-ocid="contact.member_name.input"
+                />
+                <input
+                  type="text"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  placeholder="Role"
+                  style={inputStyle}
+                  data-ocid="contact.member_role.input"
+                />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Phone Number"
+                  style={inputStyle}
+                  data-ocid="contact.member_phone.input"
+                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="submit"
+                    disabled={addMember.isPending}
+                    style={{
+                      flex: 1,
+                      background: "#1a7a3c",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "9px 0",
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                    }}
+                    data-ocid="contact.add_member.submit_button"
+                  >
+                    {addMember.isPending ? "Save ho raha hai..." : "Save karo"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setPinVerified(false);
+                      setPinInput("");
+                    }}
+                    style={{
+                      background: "#f5f5f5",
+                      color: "#555",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "9px 14px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                    data-ocid="contact.add_member.cancel_button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        )}
+
+        {deletingId !== null && (
+          <div
+            style={{
+              border: "1px solid #ffcdd2",
+              borderRadius: "8px",
+              padding: "12px",
+              background: "white",
+              marginBottom: "12px",
+            }}
+            data-ocid="contact.delete_confirm.dialog"
+          >
             <div
-              className="rounded-2xl overflow-hidden mb-3 shadow-md"
               style={{
-                background: "white",
-                border: "1px solid #e8f5e9",
+                fontSize: "12px",
+                color: "#c0392b",
+                fontWeight: "bold",
+                marginBottom: "8px",
               }}
-              data-ocid="contact.add_member.modal"
             >
-              <div
-                className="px-4 py-2"
+              Member delete karne ke liye Admin PIN dalo
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="password"
+                value={deletePin}
+                onChange={(e) => setDeletePin(e.target.value)}
+                placeholder="PIN"
+                style={{ ...inputStyle, flex: 1, borderColor: "#ffcdd2" }}
+                data-ocid="contact.delete_pin.input"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  deletingId !== null && handleDeleteWithPin(deletingId)
+                }
                 style={{
-                  background:
-                    "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
+                  background: "#c0392b",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "8px 14px",
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
                 }}
+                data-ocid="contact.delete.confirm_button"
               >
-                <span className="font-bold text-sm text-white">
-                  Naya Member Add karo
-                </span>
-              </div>
-              <form
-                onSubmit={handleAddSubmit}
-                className="p-4 flex flex-col gap-3"
+                Delete karo
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeletingId(null);
+                  setDeletePin("");
+                }}
+                style={{
+                  background: "#f5f5f5",
+                  color: "#555",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "8px 10px",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+                data-ocid="contact.delete.cancel_button"
               >
-                {!pinVerified ? (
-                  <div className="flex flex-col gap-2">
-                    <label
-                      htmlFor="contact-pin-input"
-                      className="text-xs font-semibold"
-                      style={{ color: "#555" }}
-                    >
-                      Admin PIN dalo (786)
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        id="contact-pin-input"
-                        type="password"
-                        value={pinInput}
-                        onChange={(e) => setPinInput(e.target.value)}
-                        placeholder="PIN"
-                        className="flex-1 px-3 py-2 rounded-lg border text-sm"
-                        style={{ borderColor: "#c8e6c9" }}
-                        data-ocid="contact.pin.input"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (pinInput === ADMIN_PIN) setPinVerified(true);
-                          else alert("PIN galat hai!");
-                        }}
-                        className="px-4 py-2 rounded-lg text-sm font-semibold"
-                        style={{ background: "#1a6b3a", color: "white" }}
-                        data-ocid="contact.pin_verify.button"
-                      >
-                        Verify karo
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Name"
-                      className="px-3 py-2 rounded-lg border text-sm"
-                      style={{ borderColor: "#c8e6c9" }}
-                      data-ocid="contact.member_name.input"
-                    />
-                    <input
-                      type="text"
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      placeholder="Role (jaise: Imam, Secretary)"
-                      className="px-3 py-2 rounded-lg border text-sm"
-                      style={{ borderColor: "#c8e6c9" }}
-                      data-ocid="contact.member_role.input"
-                    />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Phone Number"
-                      className="px-3 py-2 rounded-lg border text-sm"
-                      style={{ borderColor: "#c8e6c9" }}
-                      data-ocid="contact.member_phone.input"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        disabled={addMember.isPending}
-                        className="flex-1 py-2 rounded-lg font-semibold text-sm"
-                        style={{ background: "#1a6b3a", color: "white" }}
-                        data-ocid="contact.add_member.submit_button"
-                      >
-                        {addMember.isPending
-                          ? "Save ho raha hai..."
-                          : "Save karo"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAddForm(false);
-                          setPinVerified(false);
-                          setPinInput("");
-                        }}
-                        className="px-4 py-2 rounded-lg text-sm"
-                        style={{ background: "#f5f5f5", color: "#555" }}
-                        data-ocid="contact.add_member.cancel_button"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                )}
-              </form>
+                Cancel
+              </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Delete PIN prompt */}
-          {deletingId !== null && (
+        {editingMember && (
+          <form
+            onSubmit={handleUpdateSubmit}
+            style={{
+              border: "1px solid #a5d6a7",
+              borderRadius: "8px",
+              padding: "12px",
+              background: "white",
+              marginBottom: "14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+            data-ocid="contact.edit_member.modal"
+          >
             <div
-              className="rounded-2xl p-4 mb-3 shadow-md"
-              style={{
-                background: "white",
-                border: "1px solid #ffcdd2",
-              }}
-              data-ocid="contact.delete_confirm.dialog"
+              style={{ fontSize: "12px", fontWeight: "bold", color: "#1a7a3c" }}
             >
-              <div
-                className="text-sm font-semibold mb-2"
-                style={{ color: "#c0392b" }}
-              >
-                Member delete karne ke liye Admin PIN dalo
-              </div>
-              <div className="flex gap-2">
+              Member Edit karo
+            </div>
+            {!editPinVerified ? (
+              <div style={{ display: "flex", gap: "8px" }}>
                 <input
                   type="password"
-                  value={deletePin}
-                  onChange={(e) => setDeletePin(e.target.value)}
-                  placeholder="PIN"
-                  className="flex-1 px-3 py-2 rounded-lg border text-sm"
-                  style={{ borderColor: "#ffcdd2" }}
-                  data-ocid="contact.delete_pin.input"
+                  value={editPin}
+                  onChange={(e) => setEditPin(e.target.value)}
+                  placeholder="Admin PIN"
+                  style={{ ...inputStyle, flex: 1 }}
+                  data-ocid="contact.edit_pin.input"
                 />
-                <button
-                  type="button"
-                  onClick={() =>
-                    deletingId !== null && handleDeleteWithPin(deletingId)
-                  }
-                  className="px-4 py-2 rounded-lg text-sm font-semibold"
-                  style={{ background: "#c0392b", color: "white" }}
-                  data-ocid="contact.delete.confirm_button"
-                >
-                  Delete karo
-                </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setDeletingId(null);
-                    setDeletePin("");
+                    if (editPin === ADMIN_PIN) setEditPinVerified(true);
+                    else alert("PIN galat hai!");
                   }}
-                  className="px-3 py-2 rounded-lg text-sm"
-                  style={{ background: "#f5f5f5", color: "#555" }}
-                  data-ocid="contact.delete.cancel_button"
+                  style={{
+                    background: "#1a7a3c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 14px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}
+                  data-ocid="contact.edit_pin_verify.button"
                 >
-                  Cancel
+                  Verify
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* Members list */}
-          {isLoading ? (
-            <div
-              className="flex flex-col gap-2"
-              data-ocid="contact.loading_state"
-            >
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-16 rounded-2xl animate-pulse"
-                  style={{ background: "#e8f5e9" }}
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={editingMember.name}
+                  onChange={(e) =>
+                    setEditingMember({ ...editingMember, name: e.target.value })
+                  }
+                  placeholder="Name"
+                  style={inputStyle}
+                  data-ocid="contact.edit_name.input"
                 />
-              ))}
-            </div>
-          ) : members.length === 0 ? (
-            <div
-              className="rounded-2xl p-6 text-center"
-              style={{ background: "#f5f5f5" }}
-              data-ocid="contact.members.empty_state"
-            >
-              <div className="text-sm" style={{ color: "#888" }}>
-                Abhi koi member nahi. &quot;+ Member Add karo&quot; se add
-                karein.
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {members.map((member, i) => (
+                <input
+                  type="text"
+                  value={editingMember.role}
+                  onChange={(e) =>
+                    setEditingMember({ ...editingMember, role: e.target.value })
+                  }
+                  placeholder="Role"
+                  style={inputStyle}
+                  data-ocid="contact.edit_role.input"
+                />
+                <input
+                  type="tel"
+                  value={editingMember.phone}
+                  onChange={(e) =>
+                    setEditingMember({
+                      ...editingMember,
+                      phone: e.target.value,
+                    })
+                  }
+                  placeholder="Phone"
+                  style={inputStyle}
+                  data-ocid="contact.edit_phone.input"
+                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="submit"
+                    disabled={updateMember.isPending}
+                    style={{
+                      flex: 1,
+                      background: "#1a7a3c",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "9px 0",
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                    }}
+                    data-ocid="contact.edit_member.save_button"
+                  >
+                    {updateMember.isPending
+                      ? "Save ho raha hai..."
+                      : "Save karo"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingMember(null);
+                      setEditPin("");
+                      setEditPinVerified(false);
+                    }}
+                    style={{
+                      background: "#f5f5f5",
+                      color: "#555",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "9px 14px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                    data-ocid="contact.edit_member.cancel_button"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        )}
+
+        {isLoading ? (
+          <div
+            style={{ color: "#888", fontSize: "13px" }}
+            data-ocid="contact.loading_state"
+          >
+            Loading...
+          </div>
+        ) : members.length === 0 ? (
+          <div
+            style={{ color: "#888", fontSize: "13px" }}
+            data-ocid="contact.members.empty_state"
+          >
+            Abhi koi member nahi.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {members.map((member, i) => (
+              <div
+                key={String(member.id)}
+                style={{
+                  border: "1px solid #c8e6c9",
+                  borderRadius: "8px",
+                  padding: "10px 12px",
+                  background: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+                data-ocid={`contact.member.item.${i + 1}`}
+              >
                 <div
-                  key={String(member.id)}
-                  className="rounded-2xl overflow-hidden shadow-sm"
                   style={{
-                    background: "white",
-                    border: "1px solid #e8f5e9",
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "#1a7a3c",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                    flexShrink: 0,
                   }}
-                  data-ocid={`contact.member.item.${i + 1}`}
                 >
-                  <div className="flex items-center px-4 py-3 gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
-                      style={{ background: "#1a6b3a" }}
-                    >
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className="font-bold text-sm truncate"
-                        style={{ color: "#0d3d1f" }}
-                      >
-                        {member.name}
-                      </div>
-                      <div className="text-xs" style={{ color: "#888" }}>
-                        {member.role}
-                      </div>
-                      <div
-                        className="text-xs mt-0.5"
-                        style={{ color: "#1a6b3a" }}
-                      >
-                        📞 {member.phoneNumber}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={`tel:${member.phoneNumber}`}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                        style={{ background: "#e8f5e9" }}
-                        data-ocid={`contact.member_call.button.${i + 1}`}
-                      >
-                        📞
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(member.id)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                        style={{ background: "#ffebee" }}
-                        data-ocid={`contact.member_delete.button.${i + 1}`}
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                  {member.name.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "13px",
+                      color: "#1a7a3c",
+                    }}
+                  >
+                    {member.name}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#888" }}>
+                    {member.role}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#145e2e",
+                      marginTop: "2px",
+                    }}
+                  >
+                    {member.phone}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                    flexShrink: 0,
+                  }}
+                >
+                  <a
+                    href={`tel:${member.phone}`}
+                    style={{
+                      background: "#1a7a3c",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "5px",
+                      padding: "4px 8px",
+                      fontSize: "11px",
+                      textDecoration: "none",
+                    }}
+                    data-ocid={`contact.call.button.${i + 1}`}
+                  >
+                    📞 Call
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingMember({
+                        id: member.id,
+                        name: member.name,
+                        role: member.role,
+                        phone: member.phone,
+                      })
+                    }
+                    style={{
+                      background: "#e8f5e9",
+                      color: "#1a7a3c",
+                      border: "none",
+                      borderRadius: "5px",
+                      padding: "4px 8px",
+                      fontSize: "11px",
+                      cursor: "pointer",
+                    }}
+                    data-ocid={`contact.member.edit_button.${i + 1}`}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeletingId(member.id)}
+                    style={{
+                      background: "#ffebee",
+                      color: "#c0392b",
+                      border: "none",
+                      borderRadius: "5px",
+                      padding: "4px 8px",
+                      fontSize: "11px",
+                      cursor: "pointer",
+                    }}
+                    data-ocid={`contact.member.delete_button.${i + 1}`}
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

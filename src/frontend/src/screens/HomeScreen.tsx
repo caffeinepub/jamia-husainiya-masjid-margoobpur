@@ -1,74 +1,49 @@
 import { useEffect, useRef, useState } from "react";
 import type { Tab } from "../App";
-import { useAnnouncements, usePrayerTimes } from "../hooks/useQueries";
-import { isBellRinging, startBell, stopBell } from "../utils/bellAudio";
-import {
-  getCurrentPrayer,
-  isJumaPrayer,
-  normalizePrayerName,
-  parseTime,
-} from "../utils/prayerUtils";
+import { useNotices, usePrayerTimes } from "../hooks/useQueries";
+import { getDisplayName, isJumaPrayer, parseTime } from "../utils/prayerUtils";
 
 interface Props {
   onTabChange: (tab: Tab) => void;
 }
 
-const DISPLAY_NAMES: Record<string, string> = {
-  fajr: "Fajr",
-  zuhr: "Zuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-  khutba_juma: "Khutba Juma",
-  juma: "Juma",
-};
-
-export function HomeScreen({ onTabChange }: Props) {
+export function HomeScreen({ onTabChange: _onTabChange }: Props) {
   const [now, setNow] = useState(new Date());
   const { data: prayers = [] } = usePrayerTimes();
-  const { data: announcements = [] } = useAnnouncements();
-  const [bellActive, setBellActive] = useState(isBellRinging());
+  const { data: notices = [] } = useNotices();
+
+  const [bellActive, setBellActive] = useState(false);
   const [bellSecondsLeft, setBellSecondsLeft] = useState(15 * 60);
   const bellTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const prevPrayerRef = useRef<string | null>(null);
+  const prevBellPrayerRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
+    const timer = setInterval(() => setNow(new Date()), 10000);
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-trigger bell at prayer time
   useEffect(() => {
     if (!prayers.length) return;
-    const regularPrayers = prayers.filter(
-      (p) => p.enable && !isJumaPrayer(p.name),
+    const regularPrayers = prayers.filter((p) => !isJumaPrayer(p.name));
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentPrayer = regularPrayers.find(
+      (p) => parseTime(p.time) === currentMinutes,
     );
-    const currentPrayer = getCurrentPrayer(
-      regularPrayers.map((p) => ({ ...p, displayName: p.name, isJuma: false })),
-    );
-    if (currentPrayer && currentPrayer !== prevPrayerRef.current) {
-      prevPrayerRef.current = currentPrayer;
-      if (!bellActive) {
-        triggerBell();
-      }
+    if (currentPrayer && currentPrayer.name !== prevBellPrayerRef.current) {
+      prevBellPrayerRef.current = currentPrayer.name;
+      if (!bellActive) triggerBell();
     }
   });
 
   function triggerBell() {
     setBellActive(true);
     setBellSecondsLeft(15 * 60);
-    startBell(() => {
-      setBellActive(false);
-      if (bellTimerRef.current) {
-        clearInterval(bellTimerRef.current);
-        bellTimerRef.current = null;
-      }
-    });
     if (bellTimerRef.current) clearInterval(bellTimerRef.current);
     bellTimerRef.current = setInterval(() => {
       setBellSecondsLeft((prev) => {
         if (prev <= 1) {
           if (bellTimerRef.current) clearInterval(bellTimerRef.current);
+          setBellActive(false);
           return 0;
         }
         return prev - 1;
@@ -77,7 +52,6 @@ export function HomeScreen({ onTabChange }: Props) {
   }
 
   function handleStopBell() {
-    stopBell();
     setBellActive(false);
     if (bellTimerRef.current) {
       clearInterval(bellTimerRef.current);
@@ -94,42 +68,56 @@ export function HomeScreen({ onTabChange }: Props) {
   };
 
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
   const regularPrayers = prayers
-    .filter((p) => p.enable && !isJumaPrayer(p.name))
+    .filter((p) => !isJumaPrayer(p.name))
     .sort((a, b) => parseTime(a.time) - parseTime(b.time));
 
   const nextPrayer =
     regularPrayers.find((p) => parseTime(p.time) > currentMinutes) ||
     regularPrayers[0];
 
-  const displayName = nextPrayer
-    ? DISPLAY_NAMES[normalizePrayerName(nextPrayer.name)] || nextPrayer.name
-    : "Isha";
-  const displayTime = nextPrayer ? nextPrayer.time : "8:30 PM";
+  const nextPrayerDisplay = nextPrayer
+    ? `${getDisplayName(nextPrayer.name)} prayer at ${nextPrayer.time}`
+    : "Isha prayer at 8:30 PM";
 
   return (
-    <div className="flex flex-col" style={{ background: "#f0f7f0" }}>
-      {/* Bell Banner */}
+    <div style={{ background: "#f0f9f0", minHeight: "100vh" }}>
       {bellActive && (
         <div
-          className="flex items-center justify-between px-4 py-3 gap-2"
-          style={{ background: "#c0392b" }}
+          style={{
+            background: "#c0392b",
+            padding: "10px 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+          }}
           data-ocid="home.bell_banner.panel"
         >
           <div>
-            <div className="text-white font-bold text-sm">
-              🔔 Namaz ka waqt ho gaya!
+            <div
+              style={{ color: "white", fontWeight: "bold", fontSize: "13px" }}
+            >
+              🔔 Namaz ka waqt ho gaya! Masjid pahunche.
             </div>
-            <div className="text-xs" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "11px" }}>
               Bell {formatCountdown(bellSecondsLeft)} mein band ho jayegi
             </div>
           </div>
           <button
             type="button"
             onClick={handleStopBell}
-            className="text-xs font-bold px-3 py-2 rounded-lg flex-shrink-0"
-            style={{ background: "white", color: "#c0392b" }}
+            style={{
+              background: "white",
+              color: "#c0392b",
+              border: "none",
+              borderRadius: "8px",
+              padding: "6px 10px",
+              fontSize: "11px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
             data-ocid="home.bell_stop.button"
           >
             ✅ Masjid pahunch gaya — Bell band karo
@@ -139,43 +127,56 @@ export function HomeScreen({ onTabChange }: Props) {
 
       {/* Header */}
       <div
-        className="px-4 py-3"
-        style={{ background: "#1a6b3a", borderBottom: "3px solid #0d3d1f" }}
+        style={{
+          background: "#1a7a3c",
+          padding: "10px 16px",
+          borderBottom: "2px solid #145e2e",
+        }}
       >
-        {/* Arabic Bismillah */}
         <div
-          className="text-sm text-center mb-1"
           style={{
-            color: "#c9a84c",
-            fontFamily: "serif",
-            direction: "rtl",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          بسم الله الرحمن الرحيم
-        </div>
-        {/* Mosque name with crescents */}
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-2xl" style={{ color: "#c9a84c" }}>
-            ☪
-          </span>
+          <span style={{ fontSize: "26px", color: "#f5c518" }}>☪</span>
           <h1
-            className="text-white font-bold text-center"
-            style={{ fontSize: "14px" }}
+            style={{
+              color: "white",
+              fontSize: "13px",
+              fontWeight: "bold",
+              textAlign: "center",
+              flex: 1,
+              margin: "0 8px",
+              lineHeight: 1.3,
+            }}
           >
             Jamia Husainiya Masjid Margoobpur
           </h1>
-          <span className="text-2xl" style={{ color: "#c9a84c" }}>
-            ☪
-          </span>
+          <span style={{ fontSize: "26px", color: "#f5c518" }}>☪</span>
         </div>
-        {/* Bell button */}
-        <div className="flex justify-end mt-1">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: "4px",
+          }}
+        >
           <button
             type="button"
             onClick={() => (bellActive ? handleStopBell() : triggerBell())}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-base"
             style={{
-              background: bellActive ? "#c9a84c" : "rgba(255,255,255,0.15)",
+              background: bellActive ? "#f5c518" : "rgba(255,255,255,0.15)",
+              border: "none",
+              borderRadius: "50%",
+              width: "28px",
+              height: "28px",
+              fontSize: "14px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
             data-ocid="home.bell.button"
           >
@@ -184,129 +185,128 @@ export function HomeScreen({ onTabChange }: Props) {
         </div>
       </div>
 
-      {/* Mosque Image in center */}
-      <div className="flex items-center justify-center px-4 pt-4">
+      {/* Mosque Image */}
+      <div
+        style={{
+          background: "#f0f9f0",
+          paddingTop: "12px",
+          textAlign: "center",
+        }}
+      >
         <img
-          src="/assets/generated/mosque-illustration.dim_800x400.png"
+          src="/assets/generated/mosque-illustration-transparent.dim_400x200.png"
           alt="Jamia Husainiya Masjid"
-          className="w-full rounded-xl shadow-md"
-          style={{
-            maxHeight: "170px",
-            objectFit: "cover",
-            objectPosition: "center top",
-          }}
+          style={{ width: "100%", maxHeight: "180px", objectFit: "contain" }}
         />
       </div>
 
-      <div className="px-4 pt-4 flex flex-col gap-4">
+      <div style={{ padding: "12px 16px" }}>
         {/* Assalamu Alaikum */}
-        <div
-          className="rounded-xl p-4"
-          style={{ background: "white", border: "1px solid #c8e6c9" }}
-        >
-          <div className="font-bold text-base" style={{ color: "#0d3d1f" }}>
+        <div style={{ textAlign: "center", marginBottom: "10px" }}>
+          <div
+            style={{ color: "#1a7a3c", fontWeight: "bold", fontSize: "20px" }}
+          >
             Assalamu Alaikum
           </div>
-          <div
-            className="text-sm mt-0.5"
-            style={{ color: "#1a6b3a", fontFamily: "serif", direction: "rtl" }}
-          >
-            وَعَلَيْكُمُ السَّلام
-          </div>
-          <p className="text-xs mt-1" style={{ color: "#555" }}>
-            Welcome to Jamia Husainiya Masjid Margoobpur. May Allah bless you
-            and your family.
-          </p>
         </div>
 
-        {/* Next Prayer - Coming Soon */}
+        {/* Coming Soon */}
         <div
-          className="rounded-xl p-4"
-          style={{ background: "#0d3d1f", border: "1px solid #c9a84c" }}
-          data-ocid="home.next_prayer.card"
+          style={{ textAlign: "center", marginBottom: "16px" }}
+          data-ocid="home.next_prayer.panel"
         >
+          <div style={{ color: "#555", fontSize: "13px" }}>Coming Soon:</div>
           <div
-            className="text-xs font-semibold uppercase mb-2"
-            style={{ color: "rgba(255,255,255,0.6)", letterSpacing: "0.1em" }}
+            style={{
+              color: "#1a7a3c",
+              fontWeight: "bold",
+              fontSize: "15px",
+              marginTop: "2px",
+            }}
           >
-            Coming Soon
+            {nextPrayerDisplay}
           </div>
-          <div className="flex items-center justify-between">
-            <div className="font-bold text-white text-base">
-              {displayName} prayer
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <div className="font-bold text-xl" style={{ color: "white" }}>
-                {displayTime}
-              </div>
-              <div
-                className="px-2 py-0.5 rounded-full text-xs font-bold"
-                style={{ background: "#c9a84c", color: "#0d3d1f" }}
-              >
-                Soon
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => onTabChange("namaz")}
-            className="w-full mt-3 py-2 rounded-lg font-bold text-sm"
-            style={{ background: "rgba(201,168,76,0.2)", color: "#c9a84c" }}
-            data-ocid="home.namaz_times.button"
-          >
-            Sab Namaz Times dekhein →
-          </button>
         </div>
 
-        {/* Notices Section */}
+        <div style={{ borderTop: "1px solid #c8e6c9", marginBottom: "14px" }} />
+
+        {/* Notices */}
         <div>
-          <div className="font-bold text-sm mb-2" style={{ color: "#0d3d1f" }}>
-            📢 Notices
+          <div
+            style={{
+              color: "#1a7a3c",
+              fontWeight: "bold",
+              fontSize: "15px",
+              marginBottom: "10px",
+            }}
+          >
+            Notices / Suchnaein
           </div>
-          {announcements.length === 0 ? (
-            <div
-              className="text-sm"
-              style={{ color: "#888" }}
+          {notices.length === 0 ? (
+            <p
+              style={{ color: "#888", fontSize: "13px" }}
               data-ocid="home.notices.empty_state"
             >
-              Abhi koi notice nahi hai.
-            </div>
+              Koi suchna nahi
+            </p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {announcements.map((notice, i) => (
+            <div data-ocid="home.notices.list">
+              {notices.map((notice, i) => (
                 <div
-                  key={`${notice.title}-${i}`}
-                  className="py-2"
-                  style={{
-                    borderBottom:
-                      i < announcements.length - 1
-                        ? "1px solid #c8e6c9"
-                        : "none",
-                  }}
+                  key={String(notice.id)}
                   data-ocid={`home.notice.item.${i + 1}`}
                 >
                   <div
-                    className="font-semibold text-sm"
-                    style={{ color: "#0d3d1f" }}
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "14px",
+                      color: "#1a7a3c",
+                    }}
                   >
                     {notice.title}
                   </div>
-                  <div className="text-xs mt-0.5" style={{ color: "#555" }}>
-                    {notice.message}
-                  </div>
-                  <div className="text-xs mt-0.5" style={{ color: "#999" }}>
-                    {notice.date}
-                  </div>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "#444",
+                      margin: "3px 0 10px 0",
+                    }}
+                  >
+                    {notice.body}
+                  </p>
+                  {i < notices.length - 1 && (
+                    <div
+                      style={{
+                        borderTop: "1px solid #a5d6a7",
+                        marginBottom: "10px",
+                      }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="text-center py-2 text-xs" style={{ color: "#999" }}>
-          © {new Date().getFullYear()} Jamia Husainiya Masjid Margoobpur
-        </div>
+      <div
+        style={{
+          textAlign: "center",
+          padding: "16px",
+          color: "#888",
+          fontSize: "11px",
+          borderTop: "1px solid #c8e6c9",
+        }}
+      >
+        © {new Date().getFullYear()}.{" "}
+        <a
+          href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "#1a7a3c" }}
+        >
+          Built with ❤️ using caffeine.ai
+        </a>
       </div>
     </div>
   );

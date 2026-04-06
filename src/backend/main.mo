@@ -1,58 +1,71 @@
 import Time "mo:core/Time";
+import Nat "mo:core/Nat";
 import Map "mo:core/Map";
 import Text "mo:core/Text";
 import List "mo:core/List";
+import Array "mo:core/Array";
 import Iter "mo:core/Iter";
-import Nat "mo:core/Nat";
 import Order "mo:core/Order";
-
+import Migration "migration";
 
 // Adhere to safe persistent actor pattern MOR (Map-only Runtime) <https://internetcomputer.org/docs/current/motoko/main/core/actor-lifecycle#persistent-actors-patterns>
-
 // Mark with-clause as first top-level element of actor <https://internetcomputer.org/docs/current/motoko/experimental-features/with-clause#with-clause-placement>
-
+(with migration = Migration.run)
 actor {
   let adminPin = "786";
-  var nextAnnouncementId = 1;
+  var nextNoticeId = 1;
   var nextCommitteeMemberId = 1;
 
   type PrayerTime = {
     name : Text; // e.g. "Fajr", "Dhuhr"
     time : Text; // e.g. "05:00 AM"
-    enable : Bool;
+    isJuma : Bool;
+    order : Nat;
   };
 
-  type Announcement = {
+  type Notice = {
+    id : Nat;
     title : Text;
-    message : Text;
-    date : Text;
+    body : Text;
   };
 
   type CommitteeMember = {
     id : Nat;
     name : Text;
     role : Text;
-    phoneNumber : Text;
+    phone : Text;
   };
 
+  // Prayer times (name => PrayerTime)
   let prayerTimes = Map.empty<Text, PrayerTime>();
-  let announcements = Map.empty<Nat, Announcement>();
+  // Notices (id => Notice)
+  let notices = Map.empty<Nat, Notice>();
+  // Committee members (id => CommitteeMember)
   let committeeMembers = Map.empty<Nat, CommitteeMember>();
 
-  let defaultPrayers = List.empty<(Text, PrayerTime)>();
-
   // Initialize default prayer times
-  func initializePrayerTimes() {
-    prayerTimes.add("Fajr", { name = "Fajr"; time = "05:41"; enable = true });
-    prayerTimes.add("Zuhr", { name = "Zuhr"; time = "1:30"; enable = true });
-    prayerTimes.add("Asr", { name = "Asr"; time = "5:00"; enable = true });
-    prayerTimes.add("Maghrib", { name = "Maghrib"; time = "6:45"; enable = true });
-    prayerTimes.add("Isha", { name = "Isha"; time = "8:30"; enable = true });
-    prayerTimes.add("KhutbaJuma", { name = "KhutbaJuma"; time = "1:30"; enable = true });
+  func initializeDefaultPrayerTimes() {
+    let defaultTimes = [
+      { name = "Fajr"; time = "5:41"; isJuma = false; order = 1 },
+      { name = "Zuhr"; time = "1:30"; isJuma = false; order = 2 },
+      { name = "Asr"; time = "5:00"; isJuma = false; order = 3 },
+      { name = "Maghrib"; time = "6:45"; isJuma = false; order = 4 },
+      { name = "Isha"; time = "8:30"; isJuma = false; order = 5 },
+      { name = "KhutbaJuma"; time = "1:30"; isJuma = true; order = 6 },
+    ];
+
+    for (prayer in defaultTimes.values()) {
+      prayerTimes.add(prayer.name, prayer);
+    };
   };
 
-  // Call it during deployment
-  initializePrayerTimes();
+  // Call initialization during canister deployment
+  initializeDefaultPrayerTimes();
+
+  // Helper function to compare prayer times by order
+  func comparePrayerTimesByOrder(a : PrayerTime, b : PrayerTime) : Order.Order {
+    Nat.compare(a.order, b.order);
+  };
 
   // Helper function to compare prayer times by name
   func comparePrayerTimesByName(a : PrayerTime, b : PrayerTime) : Order.Order {
@@ -61,123 +74,197 @@ actor {
 
   // Helper function to check admin PIN
   func verifyAdmin(pin : Text) : Bool {
-    if (pin == adminPin) {
-      true;
-    } else {
-      false;
-    };
+    pin == adminPin;
   };
 
-  // Prayer Times CRUD
-  public query ({ caller }) func getPrayerTime(prayerName : Text) : async ?PrayerTime {
-    prayerTimes.get(prayerName);
-  };
+  // --- Prayer Times Management ---
 
+  // Get all prayer times (sorted by order)
   public query ({ caller }) func getAllPrayerTimes() : async [PrayerTime] {
     prayerTimes.values().toArray();
   };
 
-  public query ({ caller }) func getSortedPrayerTimes() : async [PrayerTime] {
-    prayerTimes.values().toArray().sort(comparePrayerTimesByName);
+  public query ({ caller }) func getPrayerTimesByOrder() : async [PrayerTime] {
+    let timesArray = prayerTimes.values().toArray();
+    timesArray;
   };
 
-  public shared ({ caller }) func updatePrayerTime(pin : Text, prayerTime : PrayerTime) : async Bool {
+  public query ({ caller }) func getPrayerTimesByName() : async [PrayerTime] {
+    let timesArray = prayerTimes.values().toArray();
+    timesArray;
+  };
+
+  // Get single prayer time by name
+  public query ({ caller }) func getPrayerTime(name : Text) : async ?PrayerTime {
+    prayerTimes.get(name);
+  };
+
+  // Admin functions to update prayer time
+  public shared ({ caller }) func updatePrayerTime(pin : Text, name : Text, time : Text, isJuma : Bool, order : Nat) : async Bool {
     if (not verifyAdmin(pin)) {
       return false;
     };
-    prayerTimes.add(prayerTime.name, prayerTime);
+
+    let newPrayerTime : PrayerTime = {
+      name;
+      time;
+      isJuma;
+      order;
+    };
+
+    prayerTimes.add(name, newPrayerTime);
     true;
   };
 
-  public shared ({ caller }) func updateMultiplePrayerTimes(pin : Text, newTimes : [(Text, Text)]) : async Bool {
+  // Bulk update prayer times
+  public shared ({ caller }) func updateMultiplePrayerTimes(pin : Text, updates : [(Text, Text)]) : async Bool {
     if (not verifyAdmin(pin)) {
       return false;
     };
 
-    for ((name, time) in newTimes.values()) {
+    for ((name, time) in updates.values()) {
       switch (prayerTimes.get(name)) {
         case (null) {};
-        case (?existingTime) {
-          prayerTimes.add(name, { existingTime with time });
+        case (?existing) {
+          let updated : PrayerTime = { existing with time };
+          prayerTimes.add(name, updated);
         };
       };
     };
     true;
   };
 
-  public shared ({ caller }) func togglePrayerTime(pin : Text, prayerName : Text, enable : Bool) : async Bool {
+  // --- Notices Management ---
+
+  // Get all notices
+  public query ({ caller }) func getAllNotices() : async [Notice] {
+    notices.values().toArray();
+  };
+
+  // Get single notice by id
+  public query ({ caller }) func getNotice(id : Nat) : async ?Notice {
+    notices.get(id);
+  };
+
+  // Admin: add new notice
+  public shared ({ caller }) func addNotice(pin : Text, title : Text, body : Text) : async ?Nat {
+    if (not verifyAdmin(pin)) {
+      return null;
+    };
+
+    let id = nextNoticeId;
+    let newNotice : Notice = {
+      id;
+      title;
+      body;
+    };
+
+    notices.add(id, newNotice);
+    nextNoticeId += 1;
+    ?id;
+  };
+
+  // Admin: update notice
+  public shared ({ caller }) func updateNotice(pin : Text, id : Nat, title : Text, body : Text) : async Bool {
     if (not verifyAdmin(pin)) {
       return false;
     };
-    switch (prayerTimes.get(prayerName)) {
+
+    switch (notices.get(id)) {
       case (null) { false };
-      case (?prayerTime) {
-        prayerTimes.add(prayerName, { prayerTime with enable });
+      case (?existing) {
+        let updated : Notice = {
+          id;
+          title;
+          body;
+        };
+        notices.add(id, updated);
         true;
       };
     };
   };
 
-  // Announcements CRUD
-  public query ({ caller }) func getAnnouncements() : async [Announcement] {
-    announcements.values().toArray();
-  };
-
-  public query ({ caller }) func getAnnouncement(id : Nat) : async ?Announcement {
-    announcements.get(id);
-  };
-
-  public shared ({ caller }) func addAnnouncement(pin : Text, title : Text, message : Text, date : Text) : async Bool {
+  // Admin: delete notice
+  public shared ({ caller }) func deleteNotice(pin : Text, id : Nat) : async Bool {
     if (not verifyAdmin(pin)) {
       return false;
     };
-
-    let announcement = {
-      title;
-      message;
-      date;
+    if (notices.containsKey(id)) {
+      notices.remove(id);
+      true;
+    } else {
+      false;
     };
-    announcements.add(nextAnnouncementId, announcement);
-    nextAnnouncementId += 1;
-    true;
   };
 
-  public shared ({ caller }) func deleteAnnouncement(pin : Text, id : Nat) : async Bool {
-    if (not verifyAdmin(pin)) {
-      return false;
-    };
-    let existed = announcements.containsKey(id);
-    announcements.remove(id);
-    existed;
-  };
+  // --- Committee Members Management ---
 
-  // Committee Members CRUD
-  public query ({ caller }) func getCommitteeMembers() : async [CommitteeMember] {
+  // Get all committee members
+  public query ({ caller }) func getAllCommitteeMembers() : async [CommitteeMember] {
     committeeMembers.values().toArray();
   };
 
-  public shared ({ caller }) func addCommitteeMember(pin : Text, name : Text, role : Text, phoneNumber : Text) : async Bool {
+  // Get single committee member by id
+  public query ({ caller }) func getCommitteeMember(id : Nat) : async ?CommitteeMember {
+    committeeMembers.get(id);
+  };
+
+  // Admin: add new committee member
+  public shared ({ caller }) func addCommitteeMember(pin : Text, name : Text, role : Text, phone : Text) : async ?Nat {
     if (not verifyAdmin(pin)) {
-      return false;
+      return null;
     };
+
     let id = nextCommitteeMemberId;
-    nextCommitteeMemberId += 1;
-    let member = {
+    let newMember : CommitteeMember = {
       id;
       name;
       role;
-      phoneNumber;
+      phone;
     };
-    committeeMembers.add(id, member);
-    true;
+
+    committeeMembers.add(id, newMember);
+    nextCommitteeMemberId += 1;
+    ?id;
   };
 
+  // Admin: update committee member
+  public shared ({ caller }) func updateCommitteeMember(pin : Text, id : Nat, name : Text, role : Text, phone : Text) : async Bool {
+    if (not verifyAdmin(pin)) {
+      return false;
+    };
+
+    switch (committeeMembers.get(id)) {
+      case (null) { false };
+      case (?existing) {
+        let updated : CommitteeMember = {
+          id;
+          name;
+          role;
+          phone;
+        };
+        committeeMembers.add(id, updated);
+        true;
+      };
+    };
+  };
+
+  // Admin: delete committee member
   public shared ({ caller }) func deleteCommitteeMember(pin : Text, id : Nat) : async Bool {
     if (not verifyAdmin(pin)) {
       return false;
     };
-    let existed = committeeMembers.containsKey(id);
-    committeeMembers.remove(id);
-    existed;
+    if (committeeMembers.containsKey(id)) {
+      committeeMembers.remove(id);
+      true;
+    } else {
+      false;
+    };
+  };
+
+  // --- Authentication ---
+
+  public shared ({ caller }) func verifyAdminPin(pin : Text) : async Bool {
+    verifyAdmin(pin);
   };
 };

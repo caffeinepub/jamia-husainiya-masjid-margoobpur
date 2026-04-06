@@ -1,42 +1,15 @@
-export interface PrayerInfo {
-  name: string;
-  displayName: string;
-  time: string;
-  enable: boolean;
-  isJuma?: boolean;
-}
-
-export const PRAYER_DISPLAY_NAMES: Record<string, string> = {
-  fajr: "Fajr",
-  zuhr: "Zuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-  khutba_juma: "Khutba Juma",
-  juma: "Juma",
-};
-
-/**
- * Normalize a prayer name from the backend (e.g. "KhutbaJuma", "Fajr")
- * to the canonical lowercase-underscore form used in the frontend
- * (e.g. "khutba_juma", "fajr").
- */
 export function normalizePrayerName(name: string): string {
   const lower = name.toLowerCase().trim();
-  // KhutbaJuma -> khutba_juma
   if (
-    lower === "khuṭbajuma" ||
-    lower === "khuṭba_juma" ||
     lower === "khutbajuma" ||
-    lower === "khutba juma"
+    lower === "khutba juma" ||
+    lower === "khutba_juma"
   ) {
     return "khutba_juma";
   }
-  // Replace any space with underscore
   return lower.replace(/\s+/g, "_");
 }
 
-/** Return true if the given prayer name (from backend or frontend) is the Juma prayer. */
 export function isJumaPrayer(name: string): boolean {
   const n = normalizePrayerName(name);
   return n === "khutba_juma" || n === "juma";
@@ -45,7 +18,6 @@ export function isJumaPrayer(name: string): boolean {
 export function parseTime(timeStr: string): number {
   if (!timeStr) return 0;
   const clean = timeStr.trim();
-  // Handle 12-hour format (e.g. "1:30 PM", "5:41 AM")
   const match12 = clean.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (match12) {
     let h = Number.parseInt(match12[1], 10);
@@ -55,7 +27,6 @@ export function parseTime(timeStr: string): number {
     if (meridiem === "PM" && h !== 12) h += 12;
     return h * 60 + m;
   }
-  // Handle 24-hour format (e.g. "13:30")
   const match24 = clean.match(/^(\d{1,2}):(\d{2})$/);
   if (match24) {
     const h = Number.parseInt(match24[1], 10);
@@ -65,41 +36,25 @@ export function parseTime(timeStr: string): number {
   return 0;
 }
 
-export function getCurrentPrayer(prayers: PrayerInfo[]): string | null {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  const sorted = [...prayers]
-    .filter((p) => p.enable && !isJumaPrayer(p.name))
-    .sort((a, b) => parseTime(a.time) - parseTime(b.time));
-
-  let current: string | null = null;
-  for (const prayer of sorted) {
-    if (parseTime(prayer.time) <= currentMinutes) {
-      current = prayer.name;
-    }
-  }
-  return current;
-}
-
-export function getNextPrayer(prayers: PrayerInfo[]): PrayerInfo | null {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  const sorted = [...prayers]
-    .filter((p) => p.enable && !isJumaPrayer(p.name))
-    .sort((a, b) => parseTime(a.time) - parseTime(b.time));
-
-  return (
-    sorted.find((p) => parseTime(p.time) > currentMinutes) || sorted[0] || null
-  );
+export function getDisplayName(name: string): string {
+  const n = normalizePrayerName(name);
+  const map: Record<string, string> = {
+    fajr: "Fajr",
+    zuhr: "Zuhr",
+    asr: "Asr",
+    maghrib: "Maghrib",
+    isha: "Isha",
+    khutba_juma: "Khutba Juma",
+    juma: "Juma",
+  };
+  return map[n] || name;
 }
 
 export function isAndroid(): boolean {
   return /android/i.test(navigator.userAgent);
 }
 
-export function launchAndroidAlarm(intentUrl: string, fallbackMsg: string) {
+export function launchAlarm(intentUrl: string, fallbackMsg: string) {
   if (isAndroid()) {
     const a = document.createElement("a");
     a.href = intentUrl;
@@ -112,43 +67,34 @@ export function launchAndroidAlarm(intentUrl: string, fallbackMsg: string) {
   }
 }
 
-export function buildAlarmIntent(
-  prayerName: string,
-  hour: number,
-  minute: number,
-): string {
-  const encodedName = encodeURIComponent(`${prayerName} Namaz`);
-  return `intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=${encodedName};i.android.intent.extra.alarm.HOUR=${hour};i.android.intent.extra.alarm.MINUTES=${minute};end`;
-}
-
 export const ALARM_INTENTS = {
   fajr: {
-    intent: buildAlarmIntent("Fajr", 5, 41),
-    label: "Fajr (5:41 AM)",
+    intent:
+      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Fajr%20Namaz;i.android.intent.extra.alarm.HOUR=5;i.android.intent.extra.alarm.MINUTES=41;end",
     displayName: "Fajr",
     time: "5:41 AM",
   },
   zuhr: {
-    intent: buildAlarmIntent("Zuhr", 13, 30),
-    label: "Zuhr (1:30 PM)",
+    intent:
+      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Zuhr%20Namaz;i.android.intent.extra.alarm.HOUR=13;i.android.intent.extra.alarm.MINUTES=30;end",
     displayName: "Zuhr",
     time: "1:30 PM",
   },
   asr: {
-    intent: buildAlarmIntent("Asr", 17, 0),
-    label: "Asr (5:00 PM)",
+    intent:
+      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Asr%20Namaz;i.android.intent.extra.alarm.HOUR=17;i.android.intent.extra.alarm.MINUTES=0;end",
     displayName: "Asr",
     time: "5:00 PM",
   },
   maghrib: {
-    intent: buildAlarmIntent("Maghrib", 18, 45),
-    label: "Maghrib (6:45 PM)",
+    intent:
+      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Maghrib%20Namaz;i.android.intent.extra.alarm.HOUR=18;i.android.intent.extra.alarm.MINUTES=45;end",
     displayName: "Maghrib",
     time: "6:45 PM",
   },
   isha: {
-    intent: buildAlarmIntent("Isha", 20, 30),
-    label: "Isha (8:30 PM)",
+    intent:
+      "intent:#Intent;action=android.intent.action.SET_ALARM;S.android.intent.extra.alarm.MESSAGE=Isha%20Namaz;i.android.intent.extra.alarm.HOUR=20;i.android.intent.extra.alarm.MINUTES=30;end",
     displayName: "Isha",
     time: "8:30 PM",
   },

@@ -1,469 +1,842 @@
-import { useState } from "react";
-import { SimpleHeader } from "../components/SimpleHeader";
+import { useEffect, useState } from "react";
+import type { PrayerTime } from "../backend.d";
 import {
-  useAddAnnouncement,
-  useAnnouncements,
+  useAddCommitteeMember,
+  useAddNotice,
   useCommitteeMembers,
-  useDeleteAnnouncement,
+  useDeleteCommitteeMember,
+  useDeleteNotice,
+  useNotices,
   usePrayerTimes,
-  useUpdateMultiplePrayerTimes,
+  useUpdateNotice,
+  useUpdatePrayerTime,
 } from "../hooks/useQueries";
-import { normalizePrayerName } from "../utils/prayerUtils";
+import { getDisplayName, isJumaPrayer } from "../utils/prayerUtils";
 
 const ADMIN_PIN = "786";
-
-const PRAYER_DISPLAY_NAMES: Record<string, string> = {
-  fajr: "Fajr",
-  zuhr: "Zuhr",
-  asr: "Asr",
-  maghrib: "Maghrib",
-  isha: "Isha",
-  khutba_juma: "Khutba Juma",
-  juma: "Juma",
-};
+type AdminTab = "prayers" | "notices" | "committee";
 
 export function AdminScreen() {
   const [pin, setPin] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
-  const [activeSection, setActiveSection] = useState<
-    "prayer" | "notice" | "committee"
-  >("prayer");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>("prayers");
 
-  // Prayer times
-  const { data: prayers = [] } = usePrayerTimes();
-  const updatePrayerTimes = useUpdateMultiplePrayerTimes();
-  // editedTimes keys use the ORIGINAL backend name (e.g. "Fajr", "KhutbaJuma")
-  // so that updateMultiplePrayerTimes sends the correct key to the backend
-  const [editedTimes, setEditedTimes] = useState<Record<string, string>>({});
-  const [saveMsg, setSaveMsg] = useState("");
-
-  // Announcements
-  const { data: announcements = [] } = useAnnouncements();
-  const addAnnouncement = useAddAnnouncement();
-  const deleteAnnouncement = useDeleteAnnouncement();
-  const [noticeTitle, setNoticeTitle] = useState("");
-  const [noticeMessage, setNoticeMessage] = useState("");
-  const [noticeDate, setNoticeDate] = useState("");
-
-  // Committee
-  const { data: members = [] } = useCommitteeMembers();
-
-  function handleUnlock(e: React.FormEvent) {
-    e.preventDefault();
+  function handleLogin() {
     if (pin === ADMIN_PIN) {
-      setUnlocked(true);
-    } else {
-      alert("PIN galat hai! Sahi PIN dalo.");
-      setPin("");
-    }
+      setIsLoggedIn(true);
+      setLoginError(false);
+    } else setLoginError(true);
   }
 
-  function handleSavePrayerTimes() {
-    const updates: Array<[string, string]> = Object.entries(editedTimes).filter(
-      ([, v]) => v.trim() !== "",
-    );
-    if (updates.length === 0) {
-      alert("Koi changes nahi kiye!");
-      return;
-    }
-    updatePrayerTimes.mutate(
-      { pin: ADMIN_PIN, times: updates },
-      {
-        onSuccess: () => {
-          setSaveMsg("✅ Prayer times update ho gaye!");
-          setEditedTimes({});
-          setTimeout(() => setSaveMsg(""), 3000);
-        },
-        onError: () => {
-          setSaveMsg("❌ Problem ho gayi. Dobara try karo.");
-          setTimeout(() => setSaveMsg(""), 3000);
-        },
-      },
-    );
-  }
-
-  function handleAddNotice(e: React.FormEvent) {
-    e.preventDefault();
-    if (!noticeTitle.trim() || !noticeMessage.trim() || !noticeDate.trim()) {
-      alert("Sab fields bharo!");
-      return;
-    }
-    addAnnouncement.mutate(
-      {
-        pin: ADMIN_PIN,
-        title: noticeTitle.trim(),
-        message: noticeMessage.trim(),
-        date: noticeDate.trim(),
-      },
-      {
-        onSuccess: () => {
-          setNoticeTitle("");
-          setNoticeMessage("");
-          setNoticeDate("");
-        },
-        onError: () => alert("Problem ho gayi. Dobara try karo."),
-      },
-    );
-  }
-
-  function handleDeleteNotice(idx: number) {
-    deleteAnnouncement.mutate(
-      { pin: ADMIN_PIN, id: BigInt(idx) },
-      {
-        onError: () => alert("Problem ho gayi."),
-      },
-    );
-  }
-
-  if (!unlocked) {
+  if (!isLoggedIn) {
     return (
-      <div className="flex flex-col">
-        <SimpleHeader subtitle="🔒 Admin Panel" />
-        <div className="p-6 flex flex-col items-center gap-6">
-          <div className="text-5xl mt-4">🔐</div>
-          <div className="text-center">
-            <div className="font-bold text-lg" style={{ color: "#0d3d1f" }}>
-              Admin Login
-            </div>
-            <div className="text-sm mt-1" style={{ color: "#888" }}>
-              PIN enter karke admin panel kholein
-            </div>
-          </div>
-          <form
-            onSubmit={handleUnlock}
-            className="w-full max-w-xs flex flex-col gap-3"
+      <div style={{ background: "#f0f9f0", minHeight: "100vh" }}>
+        <div
+          style={{
+            background: "#1a7a3c",
+            padding: "12px 16px",
+            borderBottom: "2px solid #145e2e",
+          }}
+        >
+          <h2
+            style={{
+              color: "white",
+              fontWeight: "bold",
+              fontSize: "16px",
+              margin: 0,
+            }}
           >
+            ⚙️ Admin Panel
+          </h2>
+        </div>
+        <div style={{ padding: "32px 24px" }}>
+          <div
+            style={{
+              fontWeight: "bold",
+              fontSize: "14px",
+              color: "#1a7a3c",
+              marginBottom: "12px",
+            }}
+          >
+            Admin PIN dalo
+          </div>
+          <div style={{ display: "flex", gap: "10px" }}>
             <input
               type="password"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              placeholder="Admin PIN dalo"
-              className="w-full px-4 py-3 rounded-2xl border text-center text-lg tracking-widest"
-              style={{ borderColor: "#c8e6c9", outline: "none" }}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              placeholder="PIN enter karo"
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                border: `1px solid ${loginError ? "#c0392b" : "#c8e6c9"}`,
+                borderRadius: "6px",
+                fontSize: "14px",
+              }}
               data-ocid="admin.pin.input"
             />
             <button
-              type="submit"
-              className="w-full py-3 rounded-2xl font-bold text-base"
-              style={{ background: "#1a6b3a", color: "white" }}
-              data-ocid="admin.login.submit_button"
+              type="button"
+              onClick={handleLogin}
+              style={{
+                background: "#1a7a3c",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                padding: "10px 20px",
+                fontSize: "14px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              data-ocid="admin.login.button"
             >
-              Login karo
+              Login
             </button>
-          </form>
+          </div>
+          {loginError && (
+            <div
+              style={{ color: "#c0392b", fontSize: "12px", marginTop: "8px" }}
+              data-ocid="admin.login.error_state"
+            >
+              PIN galat hai! Dobara koshish karo.
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col">
-      {/* Islamic Header */}
-      <SimpleHeader
-        subtitle="⚙️ Admin Panel"
-        rightElement={
-          <button
-            type="button"
-            onClick={() => {
-              setUnlocked(false);
-              setPin("");
-            }}
-            className="text-xs px-3 py-1.5 rounded-full font-semibold"
-            style={{ background: "rgba(255,255,255,0.15)", color: "white" }}
-            data-ocid="admin.logout.button"
-          >
-            Logout
-          </button>
-        }
-      />
+    <div style={{ background: "#f0f9f0", minHeight: "100vh" }}>
+      <div
+        style={{
+          background: "#1a7a3c",
+          padding: "12px 16px",
+          borderBottom: "2px solid #145e2e",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <h2
+          style={{
+            color: "white",
+            fontWeight: "bold",
+            fontSize: "16px",
+            margin: 0,
+          }}
+        >
+          ⚙️ Admin Panel
+        </h2>
+        <button
+          type="button"
+          onClick={() => {
+            setIsLoggedIn(false);
+            setPin("");
+          }}
+          style={{
+            background: "rgba(255,255,255,0.2)",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "5px 10px",
+            fontSize: "12px",
+            cursor: "pointer",
+          }}
+          data-ocid="admin.logout.button"
+        >
+          Logout
+        </button>
+      </div>
 
-      {/* Section Tabs */}
-      <div className="flex" style={{ background: "#0d3d1f" }}>
-        {(
-          [
-            { id: "prayer", label: "🕌 Prayer Times" },
-            { id: "notice", label: "📢 Notices" },
-            { id: "committee", label: "👥 Committee" },
-          ] as const
-        ).map((tab) => (
+      <div
+        style={{
+          display: "flex",
+          borderBottom: "2px solid #a5d6a7",
+          background: "white",
+        }}
+        data-ocid="admin.tabs.panel"
+      >
+        {(["prayers", "notices", "committee"] as AdminTab[]).map((tab) => (
           <button
-            key={tab.id}
+            key={tab}
             type="button"
-            onClick={() => setActiveSection(tab.id)}
-            className="flex-1 py-2.5 text-xs font-semibold"
+            onClick={() => setActiveTab(tab)}
             style={{
-              color:
-                activeSection === tab.id ? "#c9a84c" : "rgba(255,255,255,0.65)",
-              borderBottom:
-                activeSection === tab.id
-                  ? "2px solid #c9a84c"
-                  : "2px solid transparent",
+              flex: 1,
+              padding: "10px 0",
+              background: activeTab === tab ? "#e8f5e9" : "transparent",
+              borderBottom: activeTab === tab ? "2px solid #1a7a3c" : "none",
+              border: "none",
+              color: activeTab === tab ? "#1a7a3c" : "#888",
+              fontWeight: activeTab === tab ? "bold" : "normal",
+              fontSize: "12px",
+              cursor: "pointer",
             }}
-            data-ocid={`admin.${tab.id}.tab`}
+            data-ocid={`admin.${tab}.tab`}
           >
-            {tab.label}
+            {tab === "prayers"
+              ? "🕌 Namaz"
+              : tab === "notices"
+                ? "📢 Suchna"
+                : "👥 Committee"}
           </button>
         ))}
       </div>
 
-      <div className="p-4">
-        {/* Prayer Times Section */}
-        {activeSection === "prayer" && (
-          <div className="flex flex-col gap-3">
-            <div className="font-bold text-sm" style={{ color: "#0d3d1f" }}>
-              Prayer Times Edit karo
-            </div>
-            {saveMsg && (
-              <div
-                className="px-4 py-2 rounded-2xl text-sm font-semibold text-center"
-                style={{
-                  background: saveMsg.startsWith("✅") ? "#e8f5e9" : "#ffebee",
-                  color: saveMsg.startsWith("✅") ? "#1a6b3a" : "#c0392b",
-                }}
-                data-ocid="admin.save_prayer_times.success_state"
-              >
-                {saveMsg}
-              </div>
-            )}
-            {prayers.map((prayer) => (
-              <div
-                key={prayer.name}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-sm"
-                style={{
-                  background: "white",
-                  border: "1px solid #e8f5e9",
-                }}
-              >
-                <div className="flex-1">
-                  <div
-                    className="font-semibold text-sm"
-                    style={{ color: "#0d3d1f" }}
-                  >
-                    {/* Use normalized name for display but keep original name for the key */}
-                    {PRAYER_DISPLAY_NAMES[normalizePrayerName(prayer.name)] ||
-                      prayer.name}
-                  </div>
-                  <div className="text-xs" style={{ color: "#888" }}>
-                    Abhi: {prayer.time}
-                  </div>
-                </div>
-                <input
-                  type="text"
-                  value={editedTimes[prayer.name] ?? ""}
-                  onChange={(e) =>
-                    setEditedTimes((prev) => ({
-                      ...prev,
-                      // Keep the original backend name as key so updateMultiplePrayerTimes
-                      // sends the correct key (e.g. "KhutbaJuma") to the backend
-                      [prayer.name]: e.target.value,
-                    }))
-                  }
-                  placeholder={prayer.time}
-                  className="w-28 px-2 py-1.5 rounded-lg border text-sm text-center"
-                  style={{ borderColor: "#c8e6c9", outline: "none" }}
-                  data-ocid={`admin.prayer_${normalizePrayerName(prayer.name)}.input`}
-                />
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={handleSavePrayerTimes}
-              disabled={updatePrayerTimes.isPending}
-              className="w-full py-3 rounded-2xl font-bold"
-              style={{
-                background: "#1a6b3a",
-                color: "white",
-                opacity: updatePrayerTimes.isPending ? 0.7 : 1,
-              }}
-              data-ocid="admin.save_prayer_times.button"
-            >
-              {updatePrayerTimes.isPending
-                ? "Save ho raha hai..."
-                : "✅ Save karo"}
-            </button>
-          </div>
-        )}
-
-        {/* Notices Section */}
-        {activeSection === "notice" && (
-          <div className="flex flex-col gap-4">
-            {/* Add Notice Form */}
-            <div
-              className="rounded-2xl overflow-hidden shadow-md"
-              style={{
-                background: "white",
-                border: "1px solid #e8f5e9",
-              }}
-            >
-              <div
-                className="px-4 py-2"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
-                }}
-              >
-                <span className="font-bold text-sm text-white">
-                  Naya Notice Add karo
-                </span>
-              </div>
-              <form
-                onSubmit={handleAddNotice}
-                className="p-4 flex flex-col gap-3"
-              >
-                <input
-                  type="text"
-                  value={noticeTitle}
-                  onChange={(e) => setNoticeTitle(e.target.value)}
-                  placeholder="Notice Title"
-                  className="px-3 py-2 rounded-xl border text-sm"
-                  style={{ borderColor: "#c8e6c9", outline: "none" }}
-                  data-ocid="admin.notice_title.input"
-                />
-                <input
-                  type="text"
-                  value={noticeDate}
-                  onChange={(e) => setNoticeDate(e.target.value)}
-                  placeholder="Date (jaise: 5 April 2026)"
-                  className="px-3 py-2 rounded-xl border text-sm"
-                  style={{ borderColor: "#c8e6c9", outline: "none" }}
-                  data-ocid="admin.notice_date.input"
-                />
-                <textarea
-                  value={noticeMessage}
-                  onChange={(e) => setNoticeMessage(e.target.value)}
-                  placeholder="Notice Message likhein..."
-                  rows={3}
-                  className="px-3 py-2 rounded-xl border text-sm resize-none"
-                  style={{ borderColor: "#c8e6c9", outline: "none" }}
-                  data-ocid="admin.notice_message.textarea"
-                />
-                <button
-                  type="submit"
-                  disabled={addAnnouncement.isPending}
-                  className="py-2.5 rounded-xl font-bold text-sm"
-                  style={{
-                    background: "#1a6b3a",
-                    color: "white",
-                    opacity: addAnnouncement.isPending ? 0.7 : 1,
-                  }}
-                  data-ocid="admin.add_notice.submit_button"
-                >
-                  {addAnnouncement.isPending
-                    ? "Add ho raha hai..."
-                    : "+ Notice Add karo"}
-                </button>
-              </form>
-            </div>
-
-            {/* Existing Notices */}
-            <div className="font-bold text-sm" style={{ color: "#0d3d1f" }}>
-              Purane Notices
-            </div>
-            {announcements.length === 0 ? (
-              <div
-                className="rounded-2xl p-4 text-center"
-                style={{ background: "#f5f5f5" }}
-                data-ocid="admin.notices.empty_state"
-              >
-                <div className="text-sm" style={{ color: "#888" }}>
-                  Koi notice nahi hai
-                </div>
-              </div>
-            ) : (
-              announcements.map((notice, i) => (
-                <div
-                  key={`${notice.title}-${i}`}
-                  className="rounded-2xl overflow-hidden shadow-sm"
-                  style={{
-                    background: "white",
-                    border: "1px solid #e8f5e9",
-                  }}
-                  data-ocid={`admin.notice.item.${i + 1}`}
-                >
-                  <div
-                    className="px-4 py-2 flex items-center justify-between"
-                    style={{
-                      background:
-                        "linear-gradient(90deg, #0d3d1f 0%, #1a6b3a 100%)",
-                    }}
-                  >
-                    <span className="font-bold text-sm text-white">
-                      {notice.title}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteNotice(i)}
-                      className="text-xs px-2 py-1 rounded-lg"
-                      style={{ background: "#ffebee", color: "#c0392b" }}
-                      data-ocid={`admin.delete_notice.button.${i + 1}`}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  <div className="px-4 py-2">
-                    <div className="text-xs" style={{ color: "#888" }}>
-                      {notice.date}
-                    </div>
-                    <div className="text-sm mt-1" style={{ color: "#333" }}>
-                      {notice.message}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Committee Section */}
-        {activeSection === "committee" && (
-          <div className="flex flex-col gap-3">
-            <div className="font-bold text-sm" style={{ color: "#0d3d1f" }}>
-              Committee Members
-            </div>
-            {members.length === 0 ? (
-              <div
-                className="rounded-2xl p-4 text-center"
-                style={{ background: "#f5f5f5" }}
-                data-ocid="admin.committee.empty_state"
-              >
-                <div className="text-sm" style={{ color: "#888" }}>
-                  Koi member nahi. Contact screen se add karein.
-                </div>
-              </div>
-            ) : (
-              members.map((member, i) => (
-                <div
-                  key={String(member.id)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-sm"
-                  style={{
-                    background: "white",
-                    border: "1px solid #e8f5e9",
-                  }}
-                  data-ocid={`admin.member.item.${i + 1}`}
-                >
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
-                    style={{ background: "#1a6b3a" }}
-                  >
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div
-                      className="font-semibold text-sm"
-                      style={{ color: "#0d3d1f" }}
-                    >
-                      {member.name}
-                    </div>
-                    <div className="text-xs" style={{ color: "#888" }}>
-                      {member.role} — {member.phoneNumber}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      <div style={{ padding: "16px" }}>
+        {activeTab === "prayers" && <PrayerManagement adminPin={ADMIN_PIN} />}
+        {activeTab === "notices" && <NoticeManagement adminPin={ADMIN_PIN} />}
+        {activeTab === "committee" && (
+          <CommitteeManagementPanel adminPin={ADMIN_PIN} />
         )}
       </div>
+    </div>
+  );
+}
+
+function PrayerManagement({ adminPin }: { adminPin: string }) {
+  const { data: prayers = [], isLoading } = usePrayerTimes();
+  const updatePrayer = useUpdatePrayerTime();
+  const [editTimes, setEditTimes] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (prayers.length) {
+      const initial: Record<string, string> = {};
+      for (const p of prayers) initial[p.name] = p.time;
+      setEditTimes(initial);
+    }
+  }, [prayers]);
+
+  async function handleSave(prayer: PrayerTime) {
+    const newTime = editTimes[prayer.name] || prayer.time;
+    await updatePrayer.mutateAsync({
+      pin: adminPin,
+      name: prayer.name,
+      time: newTime,
+      isJuma: isJumaPrayer(prayer.name),
+      order: prayer.order,
+    });
+    setSaved((prev) => ({ ...prev, [prayer.name]: true }));
+    setTimeout(
+      () => setSaved((prev) => ({ ...prev, [prayer.name]: false })),
+      2000,
+    );
+  }
+
+  if (isLoading)
+    return <div style={{ color: "#888", fontSize: "13px" }}>Loading...</div>;
+
+  return (
+    <div>
+      <div
+        style={{
+          fontWeight: "bold",
+          fontSize: "14px",
+          color: "#1a7a3c",
+          marginBottom: "12px",
+        }}
+      >
+        Namaz Timings Edit karo
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {prayers.map((prayer, i) => (
+          <div
+            key={String(prayer.order)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+              padding: "10px 12px",
+              background: "white",
+              border: "1px solid #c8e6c9",
+              borderRadius: "6px",
+            }}
+            data-ocid={`admin.prayer.item.${i + 1}`}
+          >
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: "600",
+                color: "#333",
+                flex: 1,
+              }}
+            >
+              {getDisplayName(prayer.name)}
+              {isJumaPrayer(prayer.name) && (
+                <span
+                  style={{
+                    background: "#f5c518",
+                    color: "#1a7a3c",
+                    fontSize: "9px",
+                    fontWeight: "bold",
+                    padding: "1px 5px",
+                    borderRadius: "3px",
+                    marginLeft: "6px",
+                  }}
+                >
+                  Sirf Juma
+                </span>
+              )}
+            </span>
+            <input
+              type="text"
+              value={editTimes[prayer.name] || prayer.time}
+              onChange={(e) =>
+                setEditTimes((prev) => ({
+                  ...prev,
+                  [prayer.name]: e.target.value,
+                }))
+              }
+              style={{
+                width: "90px",
+                padding: "6px 8px",
+                border: "1px solid #a5d6a7",
+                borderRadius: "5px",
+                fontSize: "13px",
+                textAlign: "center",
+              }}
+              data-ocid={`admin.prayer.time.input.${i + 1}`}
+            />
+            <button
+              type="button"
+              onClick={() => handleSave(prayer)}
+              disabled={updatePrayer.isPending}
+              style={{
+                background: saved[prayer.name] ? "#388e3c" : "#1a7a3c",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                padding: "6px 12px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              data-ocid={`admin.prayer.save_button.${i + 1}`}
+            >
+              {saved[prayer.name] ? "✓ Saved" : "Save"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NoticeManagement({ adminPin }: { adminPin: string }) {
+  const { data: notices = [], isLoading } = useNotices();
+  const addNotice = useAddNotice();
+  const updateNotice = useUpdateNotice();
+  const deleteNotice = useDeleteNotice();
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [editingNotice, setEditingNotice] = useState<{
+    id: bigint;
+    title: string;
+    body: string;
+  } | null>(null);
+
+  const inputStyle = {
+    padding: "8px 10px",
+    border: "1px solid #c8e6c9",
+    borderRadius: "6px",
+    fontSize: "13px",
+    width: "100%",
+    boxSizing: "border-box" as const,
+  };
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    const result = await addNotice.mutateAsync({
+      pin: adminPin,
+      title: title.trim(),
+      body: body.trim(),
+    });
+    if (result !== null) {
+      setTitle("");
+      setBody("");
+      setShowAddForm(false);
+    }
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingNotice?.title.trim()) return;
+    await updateNotice.mutateAsync({
+      pin: adminPin,
+      id: editingNotice.id,
+      title: editingNotice.title,
+      body: editingNotice.body,
+    });
+    setEditingNotice(null);
+  }
+
+  async function handleDelete(id: bigint) {
+    if (!confirm("Yeh suchna delete karni hai?")) return;
+    await deleteNotice.mutateAsync({ pin: adminPin, id });
+  }
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+        }}
+      >
+        <div style={{ fontWeight: "bold", fontSize: "14px", color: "#1a7a3c" }}>
+          Suchnaein Manage karo
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAddForm(!showAddForm)}
+          style={{
+            background: showAddForm ? "#f5f5f5" : "#1a7a3c",
+            color: showAddForm ? "#555" : "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "6px 12px",
+            fontSize: "12px",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+          data-ocid="admin.add_notice.open_modal_button"
+        >
+          {showAddForm ? "Cancel" : "+ Nai Suchna"}
+        </button>
+      </div>
+
+      {showAddForm && (
+        <form
+          onSubmit={handleAdd}
+          style={{
+            border: "1px solid #a5d6a7",
+            borderRadius: "8px",
+            padding: "12px",
+            background: "white",
+            marginBottom: "14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+          data-ocid="admin.add_notice.modal"
+        >
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Suchna ka Title"
+            style={inputStyle}
+            data-ocid="admin.notice_title.input"
+          />
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Poori suchna yahan likho"
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical" }}
+            data-ocid="admin.notice_body.textarea"
+          />
+          <button
+            type="submit"
+            disabled={addNotice.isPending}
+            style={{
+              background: "#1a7a3c",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "9px 0",
+              fontSize: "13px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+            data-ocid="admin.notice.submit_button"
+          >
+            {addNotice.isPending ? "Save ho raha hai..." : "Suchna Add karo"}
+          </button>
+        </form>
+      )}
+
+      {editingNotice && (
+        <form
+          onSubmit={handleUpdate}
+          style={{
+            border: "1px solid #a5d6a7",
+            borderRadius: "8px",
+            padding: "12px",
+            background: "white",
+            marginBottom: "14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+          data-ocid="admin.edit_notice.modal"
+        >
+          <div
+            style={{ fontSize: "12px", fontWeight: "bold", color: "#1a7a3c" }}
+          >
+            Suchna Edit karo
+          </div>
+          <input
+            type="text"
+            value={editingNotice.title}
+            onChange={(e) =>
+              setEditingNotice({ ...editingNotice, title: e.target.value })
+            }
+            placeholder="Title"
+            style={inputStyle}
+            data-ocid="admin.edit_notice_title.input"
+          />
+          <textarea
+            value={editingNotice.body}
+            onChange={(e) =>
+              setEditingNotice({ ...editingNotice, body: e.target.value })
+            }
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical" }}
+            data-ocid="admin.edit_notice_body.textarea"
+          />
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="submit"
+              disabled={updateNotice.isPending}
+              style={{
+                flex: 1,
+                background: "#1a7a3c",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                padding: "9px 0",
+                fontSize: "13px",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+              data-ocid="admin.edit_notice.save_button"
+            >
+              {updateNotice.isPending ? "Save ho raha hai..." : "Save karo"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingNotice(null)}
+              style={{
+                background: "#f5f5f5",
+                color: "#555",
+                border: "none",
+                borderRadius: "6px",
+                padding: "9px 14px",
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+              data-ocid="admin.edit_notice.cancel_button"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {isLoading ? (
+        <div
+          style={{ color: "#888", fontSize: "13px" }}
+          data-ocid="admin.notices.loading_state"
+        >
+          Loading...
+        </div>
+      ) : notices.length === 0 ? (
+        <div
+          style={{ color: "#888", fontSize: "13px" }}
+          data-ocid="admin.notices.empty_state"
+        >
+          Koi suchna nahi.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {notices.map((notice, i) => (
+            <div
+              key={String(notice.id)}
+              style={{
+                border: "1px solid #c8e6c9",
+                borderRadius: "6px",
+                padding: "10px 12px",
+                background: "white",
+              }}
+              data-ocid={`admin.notice.item.${i + 1}`}
+            >
+              <div
+                style={{
+                  fontWeight: "bold",
+                  fontSize: "13px",
+                  color: "#1a7a3c",
+                  marginBottom: "3px",
+                }}
+              >
+                {notice.title}
+              </div>
+              <div
+                style={{ fontSize: "12px", color: "#555", marginBottom: "8px" }}
+              >
+                {notice.body}
+              </div>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEditingNotice({
+                      id: notice.id,
+                      title: notice.title,
+                      body: notice.body,
+                    })
+                  }
+                  style={{
+                    background: "#e8f5e9",
+                    color: "#1a7a3c",
+                    border: "none",
+                    borderRadius: "5px",
+                    padding: "4px 10px",
+                    fontSize: "11px",
+                    cursor: "pointer",
+                  }}
+                  data-ocid={`admin.notice.edit_button.${i + 1}`}
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(notice.id)}
+                  disabled={deleteNotice.isPending}
+                  style={{
+                    background: "#ffebee",
+                    color: "#c0392b",
+                    border: "none",
+                    borderRadius: "5px",
+                    padding: "4px 10px",
+                    fontSize: "11px",
+                    cursor: "pointer",
+                  }}
+                  data-ocid={`admin.notice.delete_button.${i + 1}`}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommitteeManagementPanel({ adminPin }: { adminPin: string }) {
+  const { data: members = [], isLoading } = useCommitteeMembers();
+  const addMember = useAddCommitteeMember();
+  const deleteMemberMutation = useDeleteCommitteeMember();
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const inputStyle = {
+    padding: "8px 10px",
+    border: "1px solid #c8e6c9",
+    borderRadius: "6px",
+    fontSize: "13px",
+    width: "100%",
+    boxSizing: "border-box" as const,
+  };
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !phone.trim()) return;
+    const result = await addMember.mutateAsync({
+      pin: adminPin,
+      name: name.trim(),
+      role: role.trim(),
+      phone: phone.trim(),
+    });
+    if (result !== null) {
+      setName("");
+      setRole("");
+      setPhone("");
+      setShowAddForm(false);
+    }
+  }
+
+  async function handleDelete(id: bigint) {
+    if (!confirm("Yeh member delete karna hai?")) return;
+    await deleteMemberMutation.mutateAsync({ pin: adminPin, id });
+  }
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+        }}
+      >
+        <div style={{ fontWeight: "bold", fontSize: "14px", color: "#1a7a3c" }}>
+          Committee Manage karo
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAddForm(!showAddForm)}
+          style={{
+            background: showAddForm ? "#f5f5f5" : "#1a7a3c",
+            color: showAddForm ? "#555" : "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "6px 12px",
+            fontSize: "12px",
+            fontWeight: "bold",
+            cursor: "pointer",
+          }}
+          data-ocid="admin.add_member.open_modal_button"
+        >
+          {showAddForm ? "Cancel" : "+ Naya Sadasy"}
+        </button>
+      </div>
+
+      {showAddForm && (
+        <form
+          onSubmit={handleAdd}
+          style={{
+            border: "1px solid #a5d6a7",
+            borderRadius: "8px",
+            padding: "12px",
+            background: "white",
+            marginBottom: "14px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+          data-ocid="admin.add_member.modal"
+        >
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Naam"
+            style={inputStyle}
+            data-ocid="admin.member_name.input"
+          />
+          <input
+            type="text"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            placeholder="Role"
+            style={inputStyle}
+            data-ocid="admin.member_role.input"
+          />
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Phone Number"
+            style={inputStyle}
+            data-ocid="admin.member_phone.input"
+          />
+          <button
+            type="submit"
+            disabled={addMember.isPending}
+            style={{
+              background: "#1a7a3c",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "9px 0",
+              fontSize: "13px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+            data-ocid="admin.add_member.submit_button"
+          >
+            {addMember.isPending ? "Save ho raha hai..." : "Save karo"}
+          </button>
+        </form>
+      )}
+
+      {isLoading ? (
+        <div
+          style={{ color: "#888", fontSize: "13px" }}
+          data-ocid="admin.committee.loading_state"
+        >
+          Loading...
+        </div>
+      ) : members.length === 0 ? (
+        <div
+          style={{ color: "#888", fontSize: "13px" }}
+          data-ocid="admin.committee.empty_state"
+        >
+          Koi member nahi.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {members.map((member, i) => (
+            <div
+              key={String(member.id)}
+              style={{
+                border: "1px solid #c8e6c9",
+                borderRadius: "6px",
+                padding: "10px 12px",
+                background: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "10px",
+              }}
+              data-ocid={`admin.member.item.${i + 1}`}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: "13px",
+                    color: "#1a7a3c",
+                  }}
+                >
+                  {member.name}
+                </div>
+                <div style={{ fontSize: "11px", color: "#888" }}>
+                  {member.role}
+                </div>
+                <div style={{ fontSize: "12px", color: "#555" }}>
+                  {member.phone}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDelete(member.id)}
+                disabled={deleteMemberMutation.isPending}
+                style={{
+                  background: "#ffebee",
+                  color: "#c0392b",
+                  border: "none",
+                  borderRadius: "5px",
+                  padding: "5px 10px",
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+                data-ocid={`admin.member.delete_button.${i + 1}`}
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

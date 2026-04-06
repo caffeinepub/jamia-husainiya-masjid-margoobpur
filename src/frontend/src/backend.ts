@@ -89,80 +89,71 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface Announcement {
+export interface Notice {
+    id: bigint;
     title: string;
-    date: string;
-    message: string;
+    body: string;
 }
 export interface PrayerTime {
+    order: bigint;
     name: string;
     time: string;
-    enable: boolean;
+    isJuma: boolean;
 }
 export interface CommitteeMember {
     id: bigint;
     name: string;
     role: string;
-    phoneNumber: string;
+    phone: string;
 }
 export interface backendInterface {
-    addAnnouncement(pin: string, title: string, message: string, date: string): Promise<boolean>;
-    addCommitteeMember(pin: string, name: string, role: string, phoneNumber: string): Promise<boolean>;
-    deleteAnnouncement(pin: string, id: bigint): Promise<boolean>;
+    addCommitteeMember(pin: string, name: string, role: string, phone: string): Promise<bigint | null>;
+    addNotice(pin: string, title: string, body: string): Promise<bigint | null>;
     deleteCommitteeMember(pin: string, id: bigint): Promise<boolean>;
+    deleteNotice(pin: string, id: bigint): Promise<boolean>;
+    getAllCommitteeMembers(): Promise<Array<CommitteeMember>>;
+    getAllNotices(): Promise<Array<Notice>>;
     getAllPrayerTimes(): Promise<Array<PrayerTime>>;
-    getAnnouncement(id: bigint): Promise<Announcement | null>;
-    getAnnouncements(): Promise<Array<Announcement>>;
-    getCommitteeMembers(): Promise<Array<CommitteeMember>>;
-    getPrayerTime(prayerName: string): Promise<PrayerTime | null>;
-    getSortedPrayerTimes(): Promise<Array<PrayerTime>>;
-    togglePrayerTime(pin: string, prayerName: string, enable: boolean): Promise<boolean>;
-    updateMultiplePrayerTimes(pin: string, newTimes: Array<[string, string]>): Promise<boolean>;
-    updatePrayerTime(pin: string, prayerTime: PrayerTime): Promise<boolean>;
+    getCommitteeMember(id: bigint): Promise<CommitteeMember | null>;
+    getNotice(id: bigint): Promise<Notice | null>;
+    getPrayerTime(name: string): Promise<PrayerTime | null>;
+    getPrayerTimesByName(): Promise<Array<PrayerTime>>;
+    getPrayerTimesByOrder(): Promise<Array<PrayerTime>>;
+    updateCommitteeMember(pin: string, id: bigint, name: string, role: string, phone: string): Promise<boolean>;
+    updateMultiplePrayerTimes(pin: string, updates: Array<[string, string]>): Promise<boolean>;
+    updateNotice(pin: string, id: bigint, title: string, body: string): Promise<boolean>;
+    updatePrayerTime(pin: string, name: string, time: string, isJuma: boolean, order: bigint): Promise<boolean>;
+    verifyAdminPin(pin: string): Promise<boolean>;
 }
-import type { Announcement as _Announcement, PrayerTime as _PrayerTime } from "./declarations/backend.did.d.ts";
+import type { CommitteeMember as _CommitteeMember, Notice as _Notice, PrayerTime as _PrayerTime } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async addAnnouncement(arg0: string, arg1: string, arg2: string, arg3: string): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.addAnnouncement(arg0, arg1, arg2, arg3);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.addAnnouncement(arg0, arg1, arg2, arg3);
-            return result;
-        }
-    }
-    async addCommitteeMember(arg0: string, arg1: string, arg2: string, arg3: string): Promise<boolean> {
+    async addCommitteeMember(arg0: string, arg1: string, arg2: string, arg3: string): Promise<bigint | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.addCommitteeMember(arg0, arg1, arg2, arg3);
-                return result;
+                return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.addCommitteeMember(arg0, arg1, arg2, arg3);
-            return result;
+            return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
         }
     }
-    async deleteAnnouncement(arg0: string, arg1: bigint): Promise<boolean> {
+    async addNotice(arg0: string, arg1: string, arg2: string): Promise<bigint | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteAnnouncement(arg0, arg1);
-                return result;
+                const result = await this.actor.addNotice(arg0, arg1, arg2);
+                return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteAnnouncement(arg0, arg1);
-            return result;
+            const result = await this.actor.addNotice(arg0, arg1, arg2);
+            return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async deleteCommitteeMember(arg0: string, arg1: bigint): Promise<boolean> {
@@ -176,6 +167,48 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteCommitteeMember(arg0, arg1);
+            return result;
+        }
+    }
+    async deleteNotice(arg0: string, arg1: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteNotice(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteNotice(arg0, arg1);
+            return result;
+        }
+    }
+    async getAllCommitteeMembers(): Promise<Array<CommitteeMember>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllCommitteeMembers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllCommitteeMembers();
+            return result;
+        }
+    }
+    async getAllNotices(): Promise<Array<Notice>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllNotices();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllNotices();
             return result;
         }
     }
@@ -193,87 +226,87 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getAnnouncement(arg0: bigint): Promise<Announcement | null> {
+    async getCommitteeMember(arg0: bigint): Promise<CommitteeMember | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAnnouncement(arg0);
-                return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAnnouncement(arg0);
-            return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getAnnouncements(): Promise<Array<Announcement>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getAnnouncements();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAnnouncements();
-            return result;
-        }
-    }
-    async getCommitteeMembers(): Promise<Array<CommitteeMember>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCommitteeMembers();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCommitteeMembers();
-            return result;
-        }
-    }
-    async getPrayerTime(arg0: string): Promise<PrayerTime | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPrayerTime(arg0);
+                const result = await this.actor.getCommitteeMember(arg0);
                 return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPrayerTime(arg0);
+            const result = await this.actor.getCommitteeMember(arg0);
             return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getSortedPrayerTimes(): Promise<Array<PrayerTime>> {
+    async getNotice(arg0: bigint): Promise<Notice | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getSortedPrayerTimes();
+                const result = await this.actor.getNotice(arg0);
+                return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getNotice(arg0);
+            return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPrayerTime(arg0: string): Promise<PrayerTime | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPrayerTime(arg0);
+                return from_candid_opt_n4(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPrayerTime(arg0);
+            return from_candid_opt_n4(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPrayerTimesByName(): Promise<Array<PrayerTime>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPrayerTimesByName();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getSortedPrayerTimes();
+            const result = await this.actor.getPrayerTimesByName();
             return result;
         }
     }
-    async togglePrayerTime(arg0: string, arg1: string, arg2: boolean): Promise<boolean> {
+    async getPrayerTimesByOrder(): Promise<Array<PrayerTime>> {
         if (this.processError) {
             try {
-                const result = await this.actor.togglePrayerTime(arg0, arg1, arg2);
+                const result = await this.actor.getPrayerTimesByOrder();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.togglePrayerTime(arg0, arg1, arg2);
+            const result = await this.actor.getPrayerTimesByOrder();
+            return result;
+        }
+    }
+    async updateCommitteeMember(arg0: string, arg1: bigint, arg2: string, arg3: string, arg4: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateCommitteeMember(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateCommitteeMember(arg0, arg1, arg2, arg3, arg4);
             return result;
         }
     }
@@ -291,25 +324,59 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updatePrayerTime(arg0: string, arg1: PrayerTime): Promise<boolean> {
+    async updateNotice(arg0: string, arg1: bigint, arg2: string, arg3: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.updatePrayerTime(arg0, arg1);
+                const result = await this.actor.updateNotice(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updatePrayerTime(arg0, arg1);
+            const result = await this.actor.updateNotice(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async updatePrayerTime(arg0: string, arg1: string, arg2: string, arg3: boolean, arg4: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePrayerTime(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePrayerTime(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async verifyAdminPin(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyAdminPin(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyAdminPin(arg0);
             return result;
         }
     }
 }
-function from_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Announcement]): Announcement | null {
+function from_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_PrayerTime]): PrayerTime | null {
+function from_candid_opt_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CommitteeMember]): CommitteeMember | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Notice]): Notice | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_PrayerTime]): PrayerTime | null {
     return value.length === 0 ? null : value[0];
 }
 export interface CreateActorOptions {
